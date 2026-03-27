@@ -1,30 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus - WebGL Scene Editor</title>
+    <title>Nexus - Uncompromising WebGL Control</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg-base: #030407;
-            --grid-color: rgba(255, 255, 255, 0.03);
-            --crosshair-color: rgba(255, 255, 255, 0.15);
-            --text-primary: #ffffff;
-            --text-secondary: #8A91A6;
-            --text-muted: #565d79;
-            --accent-glow: rgba(107, 147, 243, 0.3);
-            --glass-bg: rgba(12, 15, 25, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-border-highlight: rgba(255, 255, 255, 0.15);
-            --panel-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.8), 0 0 40px -10px var(--accent-glow);
-            --font-sans: 'Inter', -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --bg: #E8E4DC;
+            --brand: #C87941;
+            --text-main: #1A1A1A;
+            --text-alt: #E8E4DC;
+            --grid-line: rgba(26, 26, 26, 0.1);
+            --shadow-accent: #9A5C32;
         }
 
         * {
@@ -34,1055 +26,380 @@
         }
 
         body {
-            background-color: var(--bg-base);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Oswald', Impact, sans-serif;
             overflow: hidden;
-            width: 100%;
             height: 100vh;
-            margin: 0;
+            width: 100vw;
             display: flex;
             flex-direction: column;
-            align-items: center;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 4vw 4vw;
+            background-position: center top;
         }
 
-        .ambient-background {
+        h1, h2, h3, .nav-logo {
+            font-weight: 700;
+            font-style: italic;
+            text-transform: uppercase;
+            line-height: 0.85;
+            letter-spacing: -0.02em;
+        }
+
+        .mono {
+            font-family: 'Space Mono', monospace;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .system-code {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            pointer-events: none;
+            font-size: 0.65rem;
+            color: var(--text-main);
+            opacity: 0.5;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            z-index: 100;
         }
+        .code-left { top: 2vw; left: 1vw; }
+        .code-right { bottom: 2vw; right: 1vw; }
 
-        .grid-layer {
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
-                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
-            background-size: 100px 100px;
-            background-position: center top;
-            mask-image: radial-gradient(ellipse at center 20%, black 20%, transparent 70%);
-            -webkit-mask-image: radial-gradient(ellipse at center 20%, black 20%, transparent 70%);
-        }
-
-        .crosshairs {
-            position: absolute;
-            inset: 0;
-            background-image:
-                radial-gradient(circle at 50px 50px, var(--crosshair-color) 1px, transparent 1px);
-            background-size: 100px 100px;
-            background-position: center top;
-            mask-image: radial-gradient(ellipse at center 30%, black 30%, transparent 80%);
-            -webkit-mask-image: radial-gradient(ellipse at center 30%, black 30%, transparent 80%);
-        }
-
-        .crosshairs::before,
-        .crosshairs::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-size: 100px 100px;
-            background-position: center top;
-        }
-
-        .crosshairs::before {
-            background-image: linear-gradient(to right, transparent 49px, var(--crosshair-color) 49px, var(--crosshair-color) 51px, transparent 51px);
-            mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
-            -webkit-mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
-            mask-size: 100px 100px;
-            -webkit-mask-size: 100px 100px;
-        }
-
-        .crosshairs::after {
-            background-image: linear-gradient(to bottom, transparent 49px, var(--crosshair-color) 49px, var(--crosshair-color) 51px, transparent 51px);
-            mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
-            -webkit-mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
-            mask-size: 100px 100px;
-            -webkit-mask-size: 100px 100px;
-        }
-
-        .spotlight {
-            position: absolute;
-            top: -20vh;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80vw;
-            height: 100vh;
-            background: radial-gradient(ellipse at top, rgba(32, 54, 105, 0.4) 0%, rgba(10, 15, 30, 0.1) 40%, transparent 70%);
-            pointer-events: none;
-            mix-blend-mode: screen;
-        }
-
-        .spotlight-core {
-            position: absolute;
-            top: -10vh;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40vw;
-            height: 60vh;
-            background: radial-gradient(ellipse at top, rgba(107, 147, 243, 0.15) 0%, transparent 60%);
-            pointer-events: none;
-            mix-blend-mode: screen;
-        }
-
-        header {
-            width: 100%;
-            max-width: 1200px;
+        nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 40px;
+            padding: 1.5vw 3vw;
+            border-bottom: 2px solid var(--text-main);
+            background: var(--bg);
             position: relative;
             z-index: 10;
-            flex-shrink: 0;
         }
 
-        .logo-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 500;
-            font-size: 14px;
-            color: var(--text-secondary);
-            letter-spacing: -0.01em;
-        }
-
-        .logo-icon {
-            width: 24px;
-            height: 24px;
-        }
-
-        .nav-btn {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            border-radius: 100px;
-            padding: 8px 16px;
-            color: var(--text-secondary);
-            font-size: 13px;
-            font-weight: 500;
+        .nav-logo {
+            font-size: 3.5vw;
             text-decoration: none;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
+            color: var(--text-main);
+            position: relative;
+        }
+        
+        .nav-logo::after {
+            content: '®';
+            font-size: 0.3em;
+            position: absolute;
+            top: 0;
+            right: -1em;
         }
 
-        .nav-btn:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--glass-border-highlight);
+        .nav-links {
+            display: flex;
+            gap: 2vw;
+            align-items: center;
         }
 
-        .nav-btn.primary {
-            background: rgba(107, 147, 243, 0.15);
+        .nav-link {
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 1vw;
+            padding: 0.5em 1em;
+            transition: all 0.1s; 
+        }
+
+        .nav-link:hover {
+            background: var(--text-main);
+            color: var(--bg);
+        }
+
+        .btn {
+            display: inline-block;
+            font-family: 'Oswald', sans-serif;
+            font-style: italic;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-decoration: none;
+            padding: 1vw 3vw;
+            font-size: 1.8vw;
+            border: 2px solid var(--text-main);
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: translateY(2px); }
+
+        .btn-solid {
+            background: var(--brand);
+            color: var(--text-alt);
+            border-color: var(--brand);
+            box-shadow: -4px 4px 0 var(--text-main);
+        }
+
+        .btn-solid:hover {
+            background: var(--text-main);
             color: #fff;
-            border-color: rgba(107, 147, 243, 0.4);
+            box-shadow: 0 0 0 var(--text-main);
         }
 
-        .nav-btn.primary:hover {
-            background: rgba(107, 147, 243, 0.25);
-            border-color: rgba(107, 147, 243, 0.8);
-            box-shadow: 0 0 15px rgba(107, 147, 243, 0.3);
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background: var(--text-main);
+            color: var(--bg);
         }
 
         main {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 1200px;
-            position: relative;
-            z-index: 2;
             flex: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            min-height: 0;
+            position: relative;
+        }
+
+        .hero-content {
+            padding: 4vw 3vw;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
-            padding-bottom: 20px;
+            border-right: 2px solid var(--text-main);
+            background: var(--bg);
+            z-index: 2;
+        }
+
+        .hero-h1 {
+            font-size: 7.8vw;
+            word-spacing: -0.1em;
+            margin-bottom: 0.15em;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-main);
+            overflow: visible;
+        }
+
+        .tagline {
+            font-size: 1.4vw;
+            max-width: 85%;
+            margin-bottom: 3.5vw;
+            line-height: 1.25;
+            color: var(--text-main);
+            opacity: 0.9;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 1.5vw;
+            align-items: center;
+        }
+
+        .hero-visual {
+            position: relative;
+            background: var(--bg);
             overflow: hidden;
-        }
-
-        .hero-header {
-            text-align: center;
-            margin-bottom: 30px;
-            flex-shrink: 0;
-        }
-
-        .overline {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
         }
 
-        .overline::before,
-        .overline::after {
-            content: '';
-            height: 1px;
-            width: 24px;
-            background: var(--glass-border);
-        }
-
-        h1 {
-            font-size: clamp(40px, 8vh, 82px);
-            font-weight: 600;
-            letter-spacing: -0.04em;
-            line-height: 1;
-            margin-bottom: 16px;
-            background: linear-gradient(180deg, #FFFFFF 0%, #A1A8BA 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 4px 24px rgba(255, 255, 255, 0.1);
-        }
-
-        .subtitle {
-            font-size: 20px;
-            color: var(--text-secondary);
-            font-weight: 400;
-            letter-spacing: -0.01em;
-            line-height: 1.5;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .subtitle strong {
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .editor-showcase {
-            position: relative;
+        .iso-scene {
             width: 100%;
-            max-width: 1000px;
-            height: clamp(300px, 45vh, 520px);
-            margin: 0 auto 40px;
-            perspective: 2000px;
+            height: 100%;
+            position: absolute;
+            top: 50%;
+            left: 55%;
+            transform: translate(-50%, -50%) rotateX(60deg) rotateZ(-45deg);
             transform-style: preserve-3d;
-            flex-shrink: 0;
         }
 
-        .panel {
+        .iso-grid-base {
             position: absolute;
-            background: linear-gradient(145deg, rgba(20, 24, 38, 0.6) 0%, rgba(10, 12, 18, 0.7) 100%);
-            backdrop-filter: blur(24px) saturate(120%);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            box-shadow: var(--panel-shadow), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            width: 45vw;
+            height: 45vw;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--text-main);
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 1.9vw,
+                var(--text-main) 1.9vw,
+                var(--text-main) 2vw
+            ),
+            repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 1.9vw,
+                var(--text-main) 1.9vw,
+                var(--text-main) 2vw
+            );
+            opacity: 0.15;
+            animation: grid-pulse 4s infinite alternate ease-in-out;
+        }
+
+        @keyframes grid-pulse {
+            from { opacity: 0.15; transform: translate(-50%, -50%) scale(1); }
+            to { opacity: 0.3; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .iso-pillar {
+            position: absolute;
+            background: var(--brand);
+            box-shadow: 
+                -1px 1px 0 var(--shadow-accent),
+                -3px 3px 0 var(--shadow-accent),
+                -5px 5px 0 var(--shadow-accent),
+                -10px 10px 0 var(--text-main);
+            transform: translateZ(20px);
+            border: 2px solid var(--text-main);
             transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .panel-header {
-            height: 44px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            background: rgba(255, 255, 255, 0.02);
-            gap: 8px;
-        }
-
-        .panel-icon {
-            width: 14px;
-            height: 14px;
-            opacity: 0.7;
-        }
-
-        .panel.center {
-            width: 60%;
-            height: 90%;
-            left: 50%;
-            top: 5%;
-            transform: translateX(-50%) translateZ(40px);
-            z-index: 3;
-            border: 1px solid var(--glass-border-highlight);
-            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.9), 0 0 60px -15px rgba(107, 147, 243, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-        }
-
-        .viewport-container {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: radial-gradient(circle at center, rgba(30, 40, 60, 0.3) 0%, transparent 70%);
-        }
-
-        .css-3d-scene {
-            width: 100%;
-            height: 100%;
-            perspective: 800px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .scene-group {
-            position: relative;
-            transform-style: preserve-3d;
-            transform: rotateX(60deg) rotateZ(-45deg);
-            animation: slowRotate 20s linear infinite;
-        }
-
-        @keyframes slowRotate {
-            from {
-                transform: rotateX(60deg) rotateZ(0deg);
-            }
-
-            to {
-                transform: rotateX(60deg) rotateZ(360deg);
-            }
-        }
-
-        .scene-grid {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            left: -150px;
-            top: -150px;
-            background-image:
-                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-            background-size: 30px 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .geometry {
-            position: absolute;
-            transform-style: preserve-3d;
-        }
-
-        .geo-plane {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            left: -40px;
-            top: -40px;
-            border: 1px solid rgba(107, 147, 243, 0.8);
-            background: rgba(107, 147, 243, 0.1);
-            backdrop-filter: blur(2px);
-        }
-
-        .geo-plane:nth-child(1) {
-            transform: translateZ(40px);
-        }
-
-        .geo-plane:nth-child(2) {
-            transform: rotateX(90deg) translateZ(40px);
-        }
-
-        .geo-plane:nth-child(3) {
-            transform: rotateY(90deg) translateZ(40px);
-        }
-
-        .gizmo {
-            position: absolute;
-            transform-style: preserve-3d;
-        }
-
-        .axis {
-            position: absolute;
-            width: 2px;
-            height: 60px;
-            transform-origin: bottom center;
-            bottom: 0;
-            left: -1px;
-        }
-
-        .axis::after {
-            content: '';
-            position: absolute;
-            top: -6px;
-            left: -4px;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-bottom: 8px solid;
-        }
-
-        .axis-y {
-            background: #2ecc71;
-            transform: translateZ(40px) rotateX(0deg);
-        }
-
-        .axis-y::after {
-            border-bottom-color: #2ecc71;
-        }
-
-        .axis-x {
-            background: #e74c3c;
-            transform: translateZ(40px) rotateX(90deg) rotateY(90deg);
-        }
-
-        .axis-x::after {
-            border-bottom-color: #e74c3c;
-        }
-
-        .axis-z {
-            background: #3498db;
-            transform: translateZ(40px) rotateX(90deg);
-        }
-
-        .axis-z::after {
-            border-bottom-color: #3498db;
-        }
-
-        .viewport-footer {
-            height: 40px;
-            background: rgba(0, 0, 0, 0.4);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            font-size: 11px;
-            font-family: var(--font-mono);
-            color: var(--text-muted);
-        }
-
-        .view-controls {
-            display: flex;
-            gap: 12px;
-        }
-
-        .view-ctrl {
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .view-ctrl:hover {
-            color: var(--text-primary);
-        }
-
-        .view-ctrl.active {
-            color: #6B93F3;
-        }
-
-        .panel.left {
-            width: 28%;
-            height: 80%;
-            left: 0;
-            top: 10%;
-            z-index: 2;
-            opacity: 0.8;
-            filter: brightness(0.8);
-            transform: translateZ(0) rotateY(5deg);
-        }
-
-        .tree-list {
-            padding: 12px;
-            font-size: 13px;
-        }
-
-        .tree-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 8px;
-            border-radius: 6px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            margin-bottom: 2px;
-        }
-
-        .tree-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-        }
-
-        .tree-item.selected {
-            background: rgba(107, 147, 243, 0.15);
+        .iso-pillar:hover {
+            transform: translateZ(60px);
+            background: var(--text-main);
             color: #fff;
         }
 
-        .tree-indent {
-            margin-left: 16px;
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-            padding-left: 8px;
+        .p1 { width: 5vw; height: 14vw; top: 12vw; left: 8vw; }
+        .p2 { width: 10vw; height: 5vw; top: 22vw; left: 24vw; }
+        .p3 { width: 6vw; height: 8vw; top: 32vw; left: 14vw; }
+        .p4 { width: 8vw; height: 8vw; top: 8px; left: 28vw; }
+
+        .iso-label {
+            position: absolute;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75vw;
+            color: var(--text-alt);
+            background: var(--text-main);
+            padding: 0.3vw 0.6vw;
+            transform: rotateZ(45deg) rotateX(-60deg) translateY(-5vw);
+            white-space: nowrap;
+            pointer-events: none;
         }
 
-        .panel.right {
-            width: 28%;
-            height: 80%;
-            right: 0;
-            top: 10%;
-            z-index: 2;
-            opacity: 0.8;
-            filter: brightness(0.8);
-            transform: translateZ(0) rotateY(-5deg);
-        }
-
-        .inspector-content {
-            padding: 16px;
-            overflow-y: auto;
-        }
-
-        .prop-section {
-            margin-bottom: 20px;
-        }
-
-        .prop-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-
-        .prop-row {
+        .trust-section {
+            border-top: 2px solid var(--text-main);
+            background: var(--bg);
+            padding: 1.2vw 3vw;
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
-            font-size: 12px;
-        }
-
-        .prop-label {
-            width: 60px;
-            color: var(--text-secondary);
-        }
-
-        .prop-inputs {
-            display: flex;
-            gap: 6px;
-            flex: 1;
-        }
-
-        .input-group {
-            flex: 1;
-            display: flex;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
             overflow: hidden;
-        }
-
-        .input-group span {
-            padding: 4px 6px;
-            background: rgba(255, 255, 255, 0.02);
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
-            font-family: var(--font-mono);
-            font-size: 10px;
-        }
-
-        .input-group input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            color: var(--text-primary);
-            font-family: var(--font-mono);
-            font-size: 11px;
-            padding: 4px 8px;
-            outline: none;
-        }
-
-        .editor-showcase:hover .panel.center {
-            transform: translateX(-50%) translateZ(60px);
-        }
-
-        .editor-showcase:hover .panel.left {
-            transform: translateZ(10px) rotateY(2deg) translateX(-10px);
-            opacity: 0.9;
-            filter: brightness(0.9);
-        }
-
-        .editor-showcase:hover .panel.right {
-            transform: translateZ(10px) rotateY(-2deg) translateX(10px);
-            opacity: 0.9;
-            filter: brightness(0.9);
-        }
-
-        .features-container {
-            width: 100%;
-            margin-bottom: 20px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        .features-heading {
-            display: none;
-        }
-
-        .features-network {
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: relative;
-            max-width: 800px;
-            margin: 0 auto;
+            z-index: 10;
         }
 
-        .network-line {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 80%, transparent);
-            z-index: 1;
-            transform: translateY(-50%);
+        .trust-label {
+            font-size: 1vw;
+            margin-right: 3vw;
+            white-space: nowrap;
+            color: var(--text-main);
+            font-weight: 700;
         }
 
-        .network-node {
-            position: absolute;
-            top: 50%;
-            width: 8px;
-            height: 8px;
-            background: var(--bg-base);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-        }
-
-        .network-node:nth-child(2) {
-            left: 15%;
-        }
-
-        .network-node:nth-child(3) {
-            left: 38%;
-        }
-
-        .network-node:nth-child(4) {
-            left: 62%;
-        }
-
-        .network-node:nth-child(5) {
-            left: 85%;
-        }
-
-        .feature-item {
-            position: relative;
-            z-index: 3;
+        .trust-marquee {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-            flex: 1;
+            gap: 6vw;
+            animation: marquee 30s linear infinite;
         }
 
-        .feature-icon-box {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(180deg, rgba(30, 35, 50, 0.8) 0%, rgba(15, 18, 28, 0.8) 100%);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-            transition: all 0.3s ease;
+        .trust-marquee span {
+            font-size: 2.8vw;
+            font-weight: 700;
+            font-style: italic;
+            text-transform: uppercase;
+            -webkit-text-stroke: 1px var(--text-main);
+            color: transparent;
+            opacity: 0.35;
+            white-space: nowrap;
         }
 
-        .feature-icon-box:hover {
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(107, 147, 243, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
 
-        .feature-icon-box svg {
-            width: 24px;
-            height: 24px;
-            color: var(--text-secondary);
-            transition: color 0.3s ease;
-        }
-
-        .feature-icon-box:hover svg {
-            color: var(--text-primary);
-        }
-
-        .feature-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        /* Utility - Scrollbar Hidden */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        /* Modern Mobile Breakpoints */
         @media (max-width: 1024px) {
-            .editor-showcase {
-                display: none;
-            }
-
-            h1 {
-                font-size: 52px;
-            }
-
-            .hero-header {
-                margin-bottom: 24px;
-            }
-
-            .features-network {
-                flex-direction: column;
-                gap: 40px;
-                padding: 40px 0;
-            }
-
-            .network-line {
-                width: 1px;
-                height: 100%;
-                top: 0;
-                left: 50%;
-                right: auto;
-                transform: translateX(-50%);
-                background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 80%, transparent);
-            }
-
-            .network-node:nth-child(2) {
-                top: 15%;
-                left: 50%;
-            }
-
-            .network-node:nth-child(3) {
-                top: 38%;
-                left: 50%;
-            }
-
-            .network-node:nth-child(4) {
-                top: 62%;
-                left: 50%;
-            }
-
-            .network-node:nth-child(5) {
-                top: 85%;
-                left: 50%;
-            }
-
-            header {
-                flex-direction: column;
-                gap: 24px;
-            }
+            body { overflow-y: auto; height: auto; }
+            main { grid-template-columns: 1fr; }
+            .hero-content { border-right: none; border-bottom: 2px solid var(--text-main); padding: 12vw 5vw; }
+            .hero-h1 { font-size: 15vw; }
+            .tagline { font-size: 3vw; max-width: 100%; }
+            .btn { font-size: 4vw; padding: 2.5vw 6vw; }
+            .hero-visual { min-height: 60vh; }
+            .nav-logo { font-size: 6vw; }
+            .nav-link { display: none; }
         }
     </style>
 </head>
-
 <body>
 
-    <div class="ambient-background">
-        <div class="grid-layer"></div>
-        <div class="crosshairs"></div>
-        <div class="spotlight"></div>
-        <div class="spotlight-core"></div>
-    </div>
+    <div class="system-code mono code-left">SYS.VER.1.0.4 // NEXUS_SIM // OPERATION: READY</div>
+    <div class="system-code mono code-right">DATA.EXPORT // GSAP.ENGINE // BOILERPLATE_V2</div>
 
-    <header>
-        <div class="logo-group">
-            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#6B93F3" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                <path d="M2 17L12 22L22 17" stroke="#6B93F3" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-                <path d="M2 12L12 17L22 12" stroke="#6B93F3" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round"></path>
-            </svg>
-            Nexus
+    <nav>
+        <a href="index.html" class="nav-logo">NEXUS</a>
+        <div class="nav-links">
+            <a href="editor.html" class="nav-link mono">Open Editor</a>
+            <a href="editor.html" class="btn btn-solid">Launch Simulator</a>
         </div>
-        <div style="display: flex; gap: 12px">
-            <a href="#" class="nav-btn">View docs</a>
-            <a href="editor.html" class="nav-btn primary">Launch Editor</a>
-        </div>
-    </header>
+    </nav>
 
     <main>
-
-        <section class="hero-header">
-            <div class="overline">Introducing Nexus</div>
-            <h1>Web-native<br>3D authoring.</h1>
-            <p class="subtitle">A professional grade WebGL scene editor. <strong>Import, compose, and animate</strong>
-                directly in the browser with uncompromising performance.</p>
-        </section>
-
-        <section class="editor-showcase">
-
-            <div class="panel left">
-                <div class="panel-header">
-                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                    Hierarchy
-                </div>
-                <div class="tree-list no-scrollbar">
-                    <div class="tree-item">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        Scene Root
-                    </div>
-                    <div class="tree-indent">
-                        <div class="tree-item">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e67e22"
-                                stroke-width="2">
-                                <circle cx="12" cy="12" r="5"></circle>
-                                <line x1="12" y1="1" x2="12" y2="3"></line>
-                                <line x1="12" y1="21" x2="12" y2="23"></line>
-                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                                <line x1="1" y1="12" x2="3" y2="12"></line>
-                                <line x1="21" y1="12" x2="23" y2="12"></line>
-                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                            </svg>
-                            DirectionalLight
-                        </div>
-                        <div class="tree-item selected">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3498db"
-                                stroke-width="2">
-                                <path
-                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                                </path>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                            </svg>
-                            Hero_Geometry
-                        </div>
-                        <div class="tree-item">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#95a5a6"
-                                stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            </svg>
-                            GridFloor
-                        </div>
-                    </div>
-                    <div class="tree-item">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
-                            </path>
-                            <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                        MainCamera
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel right">
-                <div class="panel-header">
-                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="4" y1="21" x2="4" y2="14"></line>
-                        <line x1="4" y1="10" x2="4" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12" y2="3"></line>
-                        <line x1="20" y1="21" x2="20" y2="16"></line>
-                        <line x1="20" y1="12" x2="20" y2="3"></line>
-                        <line x1="1" y1="14" x2="7" y2="14"></line>
-                        <line x1="9" y1="8" x2="15" y2="8"></line>
-                        <line x1="17" y1="16" x2="23" y2="16"></line>
-                    </svg>
-                    Properties
-                </div>
-                <div class="inspector-content no-scrollbar">
-                    <div class="prop-section">
-                        <div class="prop-title">Transform</div>
-
-                        <div class="prop-row">
-                            <div class="prop-label">Position</div>
-                            <div class="prop-inputs">
-                                <div class="input-group">
-                                    <span style="color:#e74c3c">X</span><input type="text" value="0.000">
-                                </div>
-                                <div class="input-group">
-                                    <span style="color:#2ecc71">Y</span><input type="text" value="1.500">
-                                </div>
-                                <div class="input-group">
-                                    <span style="color:#3498db">Z</span><input type="text" value="-2.000">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="prop-row">
-                            <div class="prop-label">Rotation</div>
-                            <div class="prop-inputs">
-                                <div class="input-group">
-                                    <span style="color:#e74c3c">X</span><input type="text" value="45.00">
-                                </div>
-                                <div class="input-group">
-                                    <span style="color:#2ecc71">Y</span><input type="text" value="0.000">
-                                </div>
-                                <div class="input-group">
-                                    <span style="color:#3498db">Z</span><input type="text" value="90.00">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="prop-row">
-                            <div class="prop-label">Scale</div>
-                            <div class="prop-inputs">
-                                <div class="input-group">
-                                    <span style="color:#e74c3c">X</span><input type="text" value="1.000">
-                                </div>
-                                <div class="input-group">
-                                    <span style="color:#2ecc71">Y</span><input type="text" value="1.000">
-                                </div>
-                                <div class="input-group">
-                                    <span style="color:#3498db">Z</span><input type="text" value="1.000">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="height:1px; background:rgba(255,255,255,0.05); margin: 20px 0;"></div>
-
-                    <div class="prop-section">
-                        <div class="prop-title">Material</div>
-                        <div class="prop-row">
-                            <div class="prop-label">Type</div>
-                            <div
-                                style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.05); padding:6px 8px; border-radius:4px; font-size:12px; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
-                                MeshPhysical
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="prop-row">
-                            <div class="prop-label">Color</div>
-                            <div style="flex:1; display:flex; gap:8px; align-items:center;">
-                                <div
-                                    style="width:24px; height:24px; background:#6B93F3; border-radius:4px; border:1px solid rgba(255,255,255,0.2);">
-                                </div>
-                                <span
-                                    style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">#6B93F3</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel center">
-                <div class="panel-header">
-                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                    Scene_01.gltf
-                </div>
-
-                <div class="viewport-container">
-                    <div class="css-3d-scene">
-                        <div class="scene-group">
-                            <div class="scene-grid"></div>
-                            <div class="geometry">
-                                <div class="geo-plane"></div>
-                                <div class="geo-plane"></div>
-                                <div class="geo-plane"></div>
-                            </div>
-
-                            <div class="gizmo">
-                                <div class="axis axis-y"></div>
-                                <div class="axis axis-x"></div>
-                                <div class="axis axis-z"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="viewport-footer">
-                    <div class="view-controls">
-                        <span class="view-ctrl active">Persp</span>
-                        <span class="view-ctrl">Top</span>
-                        <span class="view-ctrl">Front</span>
-                        <span class="view-ctrl">Right</span>
-                    </div>
-                    <div>FPS: 60 | Tris: 12.4k</div>
-                </div>
-            </div>
-
-        </section>
-
-        <section class="features-container">
-            <h2 class="features-heading">Professional workflow. Batteries included.</h2>
-
-            <div class="features-network">
-                <div class="network-line"></div>
-                <div class="network-node"></div>
-                <div class="network-node"></div>
-                <div class="network-node"></div>
-                <div class="network-node"></div>
-
-                <div class="feature-item">
-                    <div class="feature-icon-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="12" y1="18" x2="12" y2="12"></line>
-                            <line x1="9" y1="15" x2="15" y2="15"></line>
-                        </svg>
-                    </div>
-                    <span class="feature-label">.GLTF Import</span>
-                </div>
-
-                <div class="feature-item">
-                    <div class="feature-icon-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
-                            </path>
-                            <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                    </div>
-                    <span class="feature-label">Camera Rigging</span>
-                </div>
-
-                <div class="feature-item">
-                    <div class="feature-icon-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                        </svg>
-                    </div>
-                    <span class="feature-label">GSAP Timeline</span>
-                </div>
-
-                <div class="feature-item">
-                    <div class="feature-icon-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="16 18 22 12 16 6"></polyline>
-                            <polyline points="8 6 2 12 8 18"></polyline>
-                        </svg>
-                    </div>
-                    <span class="feature-label">React Three Fiber</span>
-                </div>
-
+        <section class="hero-content">
+            <h1 class="hero-h1">
+                <span>AUTHOR YOUR</span>
+                <span>SCENE. OWN THE</span>
+                <span>ANIMATION.</span>
+            </h1>
+            <p class="tagline mono">
+                Uncompromising control over WebGL architecture. Nexus transforms artistic 3D vision into production-ready GSAP code. Zero friction. Pure execution. 
+                Time is structural. Eradicate animation overhead.
+            </p>
+            <div class="cta-group">
+                <a href="editor.html" class="btn btn-solid">Enter Nexus</a>
+                <a href="#" class="btn btn-outline" onclick="alert('Docs coming soon')">Reference Guide</a>
             </div>
         </section>
 
+        <section class="hero-visual">
+            <div class="iso-scene">
+                <div class="iso-grid-base"></div>
+                
+                <div class="iso-pillar p1">
+                    <div class="iso-label" style="top: 0; left: 0;">CAMERA_RIGGING</div>
+                </div>
+                <div class="iso-pillar p2">
+                    <div class="iso-label" style="top: 0; left: 0;">GSAP_TIMELINE</div>
+                </div>
+                <div class="iso-pillar p3">
+                    <div class="iso-label" style="top: 0; left: 0;">JSON_EXPORT</div>
+                </div>
+                <div class="iso-pillar p4">
+                    <div class="iso-label" style="top: 0; left: 0;">SYNC_PROPS</div>
+                </div>
+            </div>
+        </section>
     </main>
 
-</body>
+    <section class="trust-section">
+        <div class="trust-label mono">OPTIMIZED FOR:</div>
+        <div class="trust-marquee">
+            <span>THREE.JS</span>
+            <span>GSAP CORE</span>
+            <span>WEBGL 2.0</span>
+            <span>REACT FIBER</span>
+            <span>THREE.JS</span>
+            <span>GSAP CORE</span>
+            <span>WEBGL 2.0</span>
+            <span>REACT FIBER</span>
+        </div>
+    </section>
 
+</body>
 </html>
