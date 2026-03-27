@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Three.js Editor</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.177.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.177.0/examples/jsm/",
+          "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.20/+esm"
+        }
+      }
+    </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      background-image: radial-gradient(circle at 50% 0%, #1a2035 0%, #050505 60%);
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .perspective-grid-container {
+      perspective: 1200px;
+      transform-style: preserve-3d;
+    }
+
+    .grid-surface {
+      transform: rotateX(75deg) translateY(-15%);
+      transform-origin: center center;
+      background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 100px 100px;
+      background-position: center center;
+
+      mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2a3241;
+      border-radius: 10px;
+    }
+
+    /* Capture Panel Utilities */
+    .cap-content {
+      display: none;
+    }
+
+    .cap-content.active {
+      display: block;
+    }
+
+    .cap-tab.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* lil-gui theming */
+    .lil-gui {
+      --background-color: rgba(10, 12, 16, 0.85);
+      --text-color: #cbd5e1;
+      --title-background-color: rgba(255, 255, 255, 0.05);
+      --title-text-color: #f8fafc;
+      --widget-color: rgba(255, 255, 255, 0.05);
+      --hover-color: rgba(255, 255, 255, 0.1);
+      --focus-color: #3b82f6;
+      --number-color: #fbbf24;
+      --string-color: #34d399;
+      --font-size: 11px;
+      font-family: 'Inter', sans-serif !important;
+      border: 1px solid rgba(255, 255, 255, 0.05) !important;
+      border-radius: 12px !important;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 50 !important;
+    }
+
+    .lil-gui.root {
+      position: fixed !important;
+      top: 1.5rem !important;
+      right: 22rem !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    }
+  </style>
+</head>
+
+<body class="w-screen h-screen relative text-slate-300 antialiased">
+
+  <!-- 3D Canvas Native -->
+  <canvas id="simulator-canvas" class="absolute inset-0 z-[1] w-full h-full pointer-events-auto"></canvas>
+
+  <!-- Decorative Grid -->
+  <div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none perspective-grid-container">
+    <div class="absolute w-[400vw] h-[400vh] grid-surface opacity-80"></div>
+  </div>
+
+  <!-- Decorative Axes -->
+  <div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
+    <svg width="600" height="600" viewBox="-300 -300 600 600"
+      class="overflow-visible opacity-80 drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
+      <line x1="0" y1="0" x2="0" y2="-250" stroke="#10b981" stroke-width="2" stroke-linecap="round"></line>
+      <line x1="0" y1="0" x2="250" y2="20" stroke="#ef4444" stroke-width="2" stroke-linecap="round"></line>
+      <line x1="0" y1="0" x2="-200" y2="200" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"></line>
+    </svg>
+  </div>
+
+  <!-- UI Shell -->
+  <div class="absolute inset-0 z-10 pointer-events-none">
+
+    <!-- Top Bar -->
+    <div class="absolute top-5 left-6 right-6 flex items-center justify-between z-20">
+
+      <div
+        class="pointer-events-auto flex items-center gap-3 bg-[#0a0c10]/60 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 pr-4 shadow-lg">
+        <div
+          class="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-800 to-black flex items-center justify-center shadow-inner border border-white/10">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="8" stroke-linejoin="miter" stroke-linecap="round">
+            <path d="M50 10 L85 80 L15 80 Z" />
+            <path d="M50 10 L50 45" />
+            <path d="M85 80 L50 45" />
+            <path d="M15 80 L50 45" />
+          </svg>
+        </div>
+        <span class="text-white font-semibold tracking-wide text-sm">Three.js Editor</span>
+      </div>
+
+      <!-- Status Pill -->
+      <div
+        class="pointer-events-auto flex items-center bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-full p-1 shadow-xl">
+        <div class="flex items-center gap-2 px-4 py-1.5 border-r border-white/10">
+          <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+          <span id="mode-label" class="text-white text-xs font-medium uppercase">Translate</span>
+        </div>
+        <div class="flex items-center gap-2 px-4 py-1.5 border-r border-white/10">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" class="text-slate-500">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span id="model-status" class="text-slate-400 text-xs truncate max-w-[180px]">No model loaded</span>
+        </div>
+        <div class="flex items-center px-4 py-1.5">
+          <span id="fps-counter" class="text-emerald-400 text-xs font-mono font-semibold tracking-wider">-- FPS</span>
+        </div>
+      </div>
+
+      <div class="pointer-events-auto flex items-center gap-3">
+        <!-- Optional external button, keeping original layout -->
+      </div>
+    </div>
+
+    <!-- Left Toolbar -->
+    <div class="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-20">
+
+      <!-- Transforms -->
+      <div
+        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] flex flex-col gap-1">
+        <div class="group relative">
+          <button id="btn-translate"
+            class="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition-colors relative z-10 active">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="5 9 2 12 5 15"></polyline>
+              <polyline points="9 5 12 2 15 5"></polyline>
+              <polyline points="19 9 22 12 19 15"></polyline>
+              <polyline points="9 19 12 22 15 19"></polyline>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <line x1="12" y1="2" x2="12" y2="22"></line>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Translate <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">T</span>
+          </div>
+        </div>
+
+        <div class="group relative">
+          <button id="btn-rotate"
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"></path>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Rotate <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">R</span>
+          </div>
+        </div>
+
+        <div class="group relative">
+          <button id="btn-scale"
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="21 3 14 3 14 10"></polyline>
+              <polyline points="3 21 10 21 10 14"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Scale <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">S</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Options -->
+      <div
+        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] flex flex-col gap-1 relative before:absolute before:-top-2 before:left-1/2 before:-translate-x-1/2 before:w-4 before:h-px before:bg-white/10">
+        <div class="group relative">
+          <button id="btn-fit"
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3">
+              </path>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Fit View <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">F</span>
+          </div>
+        </div>
+
+        <div class="group relative">
+          <button id="btn-focus"
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Focus Selected
+          </div>
+        </div>
+
+        <div class="group relative">
+          <button id="btn-wireframe"
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+              </path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Wireframe
+          </div>
+        </div>
+
+        <div class="group relative">
+          <button id="btn-bbox"
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 4"></rect>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Bounding Box
+          </div>
+        </div>
+
+        <div class="group relative">
+          <button id="btn-frustum"
+            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 22h20L12 2z"></path>
+            </svg>
+          </button>
+          <div
+            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
+            Camera Frustum
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="absolute right-6 top-24 bottom-6 w-80 flex flex-col gap-4 z-20 pointer-events-none">
+
+      <!-- Startup/Import Setup Panel -->
+      <div id="startup-panel"
+        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex-shrink-0 transition-opacity duration-500">
+        <div
+          class="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none">
+        </div>
+
+        <div class="flex items-center gap-2.5 mb-6 relative">
+          <div class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          </div>
+          <span class="text-[11px] font-bold tracking-widest text-emerald-400/90 uppercase">Workspace Active</span>
+        </div>
+
+        <h2 class="text-xl font-medium text-white mb-2 relative">Scene Setup</h2>
+        <p class="text-[13px] text-slate-400 leading-relaxed max-h-[80px] relative">
+          Import your assets to begin composing. Use a <code
+            class="text-slate-300 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">.glb</code>
+          file, or a full <code
+            class="text-slate-300 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">.gltf</code>
+          folder.
+        </p>
+
+        <div class="flex gap-3 w-full mt-6 relative z-10">
+          <button id="btn-import-file"
+            class="flex-1 relative flex items-center justify-center gap-2 bg-white text-black hover:bg-slate-200 active:scale-[0.98] transition-all py-2.5 rounded-xl text-sm font-semibold shadow-[0_0_20px_rgba(255,255,255,0.1)] group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              class="group-hover:-translate-y-0.5 transition-transform">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            File
+          </button>
+          <button id="btn-import-folder"
+            class="flex-1 relative flex items-center justify-center gap-2 bg-white/10 text-white hover:bg-white/20 active:scale-[0.98] transition-all py-2.5 rounded-xl text-sm font-semibold border border-white/10 group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+              class="group-hover:-translate-y-0.5 transition-transform">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Folder
+          </button>
+        </div>
+      </div>
+
+
+      <div class="flex-grow"></div>
+
+      <!-- File Operations -->
+      <div
+        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-4 shadow-xl flex-shrink-0">
+        <div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3 px-1">File Operations</div>
+        <div class="grid grid-cols-3 gap-2">
+          <button id="btn-capture"
+            class="flex flex-col items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="group-hover:scale-110 transition-transform">
+              <rect x="3" y="7" width="18" height="13" rx="2"></rect>
+              <circle cx="12" cy="13" r="3"></circle>
+              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span class="text-[10px] font-medium">Capture</span>
+          </button>
+
+          <button id="btn-save"
+            class="flex flex-col items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="group-hover:scale-110 transition-transform">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span class="text-[10px] font-medium">Save</span>
+          </button>
+
+          <button id="btn-load"
+            class="flex flex-col items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+              class="group-hover:scale-110 transition-transform text-amber-400">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="text-[10px] font-medium">Load</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Capture Panel Overlay -->
+    <div id="capture-panel"
+      class="hidden pointer-events-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#0a0c10]/95 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] w-[600px] flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
+        <h2 class="text-lg font-medium text-white flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg"
+            width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg> Scene Config Output</h2>
+        <div class="flex gap-2">
+          <button id="btn-copy-json"
+            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-xs font-medium text-slate-300 rounded-lg transition-colors border border-white/5">Copy
+            JSON</button>
+          <button id="btn-copy-code"
+            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-xs font-medium text-slate-300 rounded-lg transition-colors border border-white/5">Copy
+            Code</button>
+          <button id="btn-close-panel"
+            class="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-slate-400 rounded-lg transition-colors border border-white/5">✕</button>
+        </div>
+      </div>
+
+      <div id="capture-tabs" class="flex gap-2">
+        <button
+          class="cap-tab active px-4 py-2 text-xs font-medium text-white bg-white/10 rounded-lg transition-colors border border-white/5"
+          data-target="json-output">JSON</button>
+        <button
+          class="cap-tab px-4 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent"
+          data-target="code-output">Three.js Snippet</button>
+      </div>
+
+      <div
+        class="relative bg-[#050505] inset-shadow-sm border border-white/5 rounded-xl p-4 overflow-auto max-h-[400px]">
+        <pre id="json-output"
+          class="cap-content active text-[11px] font-mono text-emerald-400/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
+        <pre id="code-output"
+          class="cap-content text-[11px] font-mono text-blue-400/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hidden Dummy Elements specifically required by main.js to not crash -->
+  <div style="display: none;">
+    <input type="file" id="model-file-input" accept=".glb,.gltf,.bin,image/*" multiple />
+    <input type="file" id="model-folder-input" webkitdirectory directory multiple />
+    <input type="file" id="file-input" accept=".json" />
+
+    <div id="import-panel">
+      <button id="btn-import-primary"></button>
+      <button id="btn-close-import-panel"></button>
+      <button id="btn-import"></button>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+
+</html>
