@@ -2,499 +2,1087 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Three.js Editor</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.177.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.177.0/examples/jsm/",
-          "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.20/+esm"
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus - WebGL Scene Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #030407;
+            --grid-color: rgba(255, 255, 255, 0.03);
+            --crosshair-color: rgba(255, 255, 255, 0.15);
+            --text-primary: #ffffff;
+            --text-secondary: #8A91A6;
+            --text-muted: #565d79;
+            --accent-glow: rgba(107, 147, 243, 0.3);
+            --glass-bg: rgba(12, 15, 25, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-highlight: rgba(255, 255, 255, 0.15);
+            --panel-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.8), 0 0 40px -10px var(--accent-glow);
+            --font-sans: 'Inter', -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
         }
-      }
-    </script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #050505;
-      background-image: radial-gradient(circle at 50% 0%, #1a2035 0%, #050505 60%);
-      margin: 0;
-      overflow: hidden;
-    }
 
-    .perspective-grid-container {
-      perspective: 1200px;
-      transform-style: preserve-3d;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-    .grid-surface {
-      transform: rotateX(75deg) translateY(-15%);
-      transform-origin: center center;
-      background-image:
-        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 100px 100px;
-      background-position: center center;
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            overflow: hidden;
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-      mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
-      -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
-    }
+        .ambient-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
 
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
+        .grid-layer {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+            background-size: 100px 100px;
+            background-position: center top;
+            mask-image: radial-gradient(ellipse at center 20%, black 20%, transparent 70%);
+            -webkit-mask-image: radial-gradient(ellipse at center 20%, black 20%, transparent 70%);
+        }
 
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
+        .crosshairs {
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 50px 50px, var(--crosshair-color) 1px, transparent 1px);
+            background-size: 100px 100px;
+            background-position: center top;
+            mask-image: radial-gradient(ellipse at center 30%, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center 30%, black 30%, transparent 80%);
+        }
 
-    ::-webkit-scrollbar-thumb {
-      background: #2a3241;
-      border-radius: 10px;
-    }
+        .crosshairs::before,
+        .crosshairs::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-size: 100px 100px;
+            background-position: center top;
+        }
 
-    /* Capture Panel Utilities */
-    .cap-content {
-      display: none;
-    }
+        .crosshairs::before {
+            background-image: linear-gradient(to right, transparent 49px, var(--crosshair-color) 49px, var(--crosshair-color) 51px, transparent 51px);
+            mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
+            -webkit-mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
+            mask-size: 100px 100px;
+            -webkit-mask-size: 100px 100px;
+        }
 
-    .cap-content.active {
-      display: block;
-    }
+        .crosshairs::after {
+            background-image: linear-gradient(to bottom, transparent 49px, var(--crosshair-color) 49px, var(--crosshair-color) 51px, transparent 51px);
+            mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
+            -webkit-mask-image: radial-gradient(circle at 50px 50px, black 3px, transparent 3px);
+            mask-size: 100px 100px;
+            -webkit-mask-size: 100px 100px;
+        }
 
-    .cap-tab.active {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      border-color: rgba(255, 255, 255, 0.05);
-    }
+        .spotlight {
+            position: absolute;
+            top: -20vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80vw;
+            height: 100vh;
+            background: radial-gradient(ellipse at top, rgba(32, 54, 105, 0.4) 0%, rgba(10, 15, 30, 0.1) 40%, transparent 70%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
 
-    .hidden {
-      display: none !important;
-    }
+        .spotlight-core {
+            position: absolute;
+            top: -10vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40vw;
+            height: 60vh;
+            background: radial-gradient(ellipse at top, rgba(107, 147, 243, 0.15) 0%, transparent 60%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
 
-    /* lil-gui theming */
-    .lil-gui {
-      --background-color: rgba(10, 12, 16, 0.85);
-      --text-color: #cbd5e1;
-      --title-background-color: rgba(255, 255, 255, 0.05);
-      --title-text-color: #f8fafc;
-      --widget-color: rgba(255, 255, 255, 0.05);
-      --hover-color: rgba(255, 255, 255, 0.1);
-      --focus-color: #3b82f6;
-      --number-color: #fbbf24;
-      --string-color: #34d399;
-      --font-size: 11px;
-      font-family: 'Inter', sans-serif !important;
-      border: 1px solid rgba(255, 255, 255, 0.05) !important;
-      border-radius: 12px !important;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      z-index: 50 !important;
-    }
+        header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+        }
 
-    .lil-gui.root {
-      position: fixed !important;
-      top: 1.5rem !important;
-      right: 22rem !important;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-    }
-  </style>
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-secondary);
+            letter-spacing: -0.01em;
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--glass-border-highlight);
+        }
+
+        .nav-btn.primary {
+            background: rgba(107, 147, 243, 0.15);
+            color: #fff;
+            border-color: rgba(107, 147, 243, 0.4);
+        }
+
+        .nav-btn.primary:hover {
+            background: rgba(107, 147, 243, 0.25);
+            border-color: rgba(107, 147, 243, 0.8);
+            box-shadow: 0 0 15px rgba(107, 147, 243, 0.3);
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            justify-content: center;
+            padding-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .hero-header {
+            text-align: center;
+            margin-bottom: 30px;
+            flex-shrink: 0;
+        }
+
+        .overline {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .overline::before,
+        .overline::after {
+            content: '';
+            height: 1px;
+            width: 24px;
+            background: var(--glass-border);
+        }
+
+        h1 {
+            font-size: clamp(40px, 8vh, 82px);
+            font-weight: 600;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            margin-bottom: 16px;
+            background: linear-gradient(180deg, #FFFFFF 0%, #A1A8BA 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 24px rgba(255, 255, 255, 0.1);
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            line-height: 1.5;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .subtitle strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .editor-showcase {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            height: clamp(300px, 45vh, 520px);
+            margin: 0 auto 40px;
+            perspective: 2000px;
+            transform-style: preserve-3d;
+            flex-shrink: 0;
+        }
+
+        .panel {
+            position: absolute;
+            background: linear-gradient(145deg, rgba(20, 24, 38, 0.6) 0%, rgba(10, 12, 18, 0.7) 100%);
+            backdrop-filter: blur(24px) saturate(120%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: var(--panel-shadow), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .panel-header {
+            height: 44px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.02);
+            gap: 8px;
+        }
+
+        .panel-icon {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
+        .panel.center {
+            width: 60%;
+            height: 90%;
+            left: 50%;
+            top: 5%;
+            transform: translateX(-50%) translateZ(40px);
+            z-index: 3;
+            border: 1px solid var(--glass-border-highlight);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.9), 0 0 60px -15px rgba(107, 147, 243, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .viewport-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, rgba(30, 40, 60, 0.3) 0%, transparent 70%);
+        }
+
+        .css-3d-scene {
+            width: 100%;
+            height: 100%;
+            perspective: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scene-group {
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(60deg) rotateZ(-45deg);
+            animation: slowRotate 20s linear infinite;
+        }
+
+        @keyframes slowRotate {
+            from {
+                transform: rotateX(60deg) rotateZ(0deg);
+            }
+
+            to {
+                transform: rotateX(60deg) rotateZ(360deg);
+            }
+        }
+
+        .scene-grid {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            left: -150px;
+            top: -150px;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .geometry {
+            position: absolute;
+            transform-style: preserve-3d;
+        }
+
+        .geo-plane {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            left: -40px;
+            top: -40px;
+            border: 1px solid rgba(107, 147, 243, 0.8);
+            background: rgba(107, 147, 243, 0.1);
+            backdrop-filter: blur(2px);
+        }
+
+        .geo-plane:nth-child(1) {
+            transform: translateZ(40px);
+        }
+
+        .geo-plane:nth-child(2) {
+            transform: rotateX(90deg) translateZ(40px);
+        }
+
+        .geo-plane:nth-child(3) {
+            transform: rotateY(90deg) translateZ(40px);
+        }
+
+        .gizmo {
+            position: absolute;
+            transform-style: preserve-3d;
+        }
+
+        .axis {
+            position: absolute;
+            width: 2px;
+            height: 60px;
+            transform-origin: bottom center;
+            bottom: 0;
+            left: -1px;
+        }
+
+        .axis::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -4px;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 8px solid;
+        }
+
+        .axis-y {
+            background: #2ecc71;
+            transform: translateZ(40px) rotateX(0deg);
+        }
+
+        .axis-y::after {
+            border-bottom-color: #2ecc71;
+        }
+
+        .axis-x {
+            background: #e74c3c;
+            transform: translateZ(40px) rotateX(90deg) rotateY(90deg);
+        }
+
+        .axis-x::after {
+            border-bottom-color: #e74c3c;
+        }
+
+        .axis-z {
+            background: #3498db;
+            transform: translateZ(40px) rotateX(90deg);
+        }
+
+        .axis-z::after {
+            border-bottom-color: #3498db;
+        }
+
+        .viewport-footer {
+            height: 40px;
+            background: rgba(0, 0, 0, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .view-ctrl {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .view-ctrl:hover {
+            color: var(--text-primary);
+        }
+
+        .view-ctrl.active {
+            color: #6B93F3;
+        }
+
+        .panel.left {
+            width: 28%;
+            height: 80%;
+            left: 0;
+            top: 10%;
+            z-index: 2;
+            opacity: 0.8;
+            filter: brightness(0.8);
+            transform: translateZ(0) rotateY(5deg);
+        }
+
+        .tree-list {
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-bottom: 2px;
+        }
+
+        .tree-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .tree-item.selected {
+            background: rgba(107, 147, 243, 0.15);
+            color: #fff;
+        }
+
+        .tree-indent {
+            margin-left: 16px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding-left: 8px;
+        }
+
+        .panel.right {
+            width: 28%;
+            height: 80%;
+            right: 0;
+            top: 10%;
+            z-index: 2;
+            opacity: 0.8;
+            filter: brightness(0.8);
+            transform: translateZ(0) rotateY(-5deg);
+        }
+
+        .inspector-content {
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .prop-section {
+            margin-bottom: 20px;
+        }
+
+        .prop-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .prop-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .prop-label {
+            width: 60px;
+            color: var(--text-secondary);
+        }
+
+        .prop-inputs {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .input-group span {
+            padding: 4px 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 10px;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 8px;
+            outline: none;
+        }
+
+        .editor-showcase:hover .panel.center {
+            transform: translateX(-50%) translateZ(60px);
+        }
+
+        .editor-showcase:hover .panel.left {
+            transform: translateZ(10px) rotateY(2deg) translateX(-10px);
+            opacity: 0.9;
+            filter: brightness(0.9);
+        }
+
+        .editor-showcase:hover .panel.right {
+            transform: translateZ(10px) rotateY(-2deg) translateX(10px);
+            opacity: 0.9;
+            filter: brightness(0.9);
+        }
+
+        .features-container {
+            width: 100%;
+            margin-bottom: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .features-heading {
+            display: none;
+        }
+
+        .features-network {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .network-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 80%, transparent);
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .network-node {
+            position: absolute;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            background: var(--bg-base);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .network-node:nth-child(2) {
+            left: 15%;
+        }
+
+        .network-node:nth-child(3) {
+            left: 38%;
+        }
+
+        .network-node:nth-child(4) {
+            left: 62%;
+        }
+
+        .network-node:nth-child(5) {
+            left: 85%;
+        }
+
+        .feature-item {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .feature-icon-box {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(180deg, rgba(30, 35, 50, 0.8) 0%, rgba(15, 18, 28, 0.8) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .feature-icon-box:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 20px rgba(107, 147, 243, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon-box svg {
+            width: 24px;
+            height: 24px;
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+
+        .feature-icon-box:hover svg {
+            color: var(--text-primary);
+        }
+
+        .feature-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* Utility - Scrollbar Hidden */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Modern Mobile Breakpoints */
+        @media (max-width: 1024px) {
+            .editor-showcase {
+                display: none;
+            }
+
+            h1 {
+                font-size: 52px;
+            }
+
+            .hero-header {
+                margin-bottom: 24px;
+            }
+
+            .features-network {
+                flex-direction: column;
+                gap: 40px;
+                padding: 40px 0;
+            }
+
+            .network-line {
+                width: 1px;
+                height: 100%;
+                top: 0;
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
+                background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.1) 20%, rgba(255, 255, 255, 0.1) 80%, transparent);
+            }
+
+            .network-node:nth-child(2) {
+                top: 15%;
+                left: 50%;
+            }
+
+            .network-node:nth-child(3) {
+                top: 38%;
+                left: 50%;
+            }
+
+            .network-node:nth-child(4) {
+                top: 62%;
+                left: 50%;
+            }
+
+            .network-node:nth-child(5) {
+                top: 85%;
+                left: 50%;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 24px;
+            }
+        }
+    </style>
 </head>
 
-<body class="w-screen h-screen relative text-slate-300 antialiased">
+<body>
 
-  <!-- 3D Canvas Native -->
-  <canvas id="simulator-canvas" class="absolute inset-0 z-[1] w-full h-full pointer-events-auto"></canvas>
-
-  <!-- Decorative Grid -->
-  <div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none perspective-grid-container">
-    <div class="absolute w-[400vw] h-[400vh] grid-surface opacity-80"></div>
-  </div>
-
-  <!-- Decorative Axes -->
-  <div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none">
-    <svg width="600" height="600" viewBox="-300 -300 600 600"
-      class="overflow-visible opacity-80 drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]">
-      <line x1="0" y1="0" x2="0" y2="-250" stroke="#10b981" stroke-width="2" stroke-linecap="round"></line>
-      <line x1="0" y1="0" x2="250" y2="20" stroke="#ef4444" stroke-width="2" stroke-linecap="round"></line>
-      <line x1="0" y1="0" x2="-200" y2="200" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"></line>
-    </svg>
-  </div>
-
-  <!-- UI Shell -->
-  <div class="absolute inset-0 z-10 pointer-events-none">
-
-    <!-- Top Bar -->
-    <div class="absolute top-5 left-6 right-6 flex items-center justify-between z-20">
-
-      <div
-        class="pointer-events-auto flex items-center gap-3 bg-[#0a0c10]/60 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 pr-4 shadow-lg">
-        <div
-          class="w-8 h-8 rounded-xl bg-gradient-to-br from-slate-800 to-black flex items-center justify-center shadow-inner border border-white/10">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="8" stroke-linejoin="miter" stroke-linecap="round">
-            <path d="M50 10 L85 80 L15 80 Z" />
-            <path d="M50 10 L50 45" />
-            <path d="M85 80 L50 45" />
-            <path d="M15 80 L50 45" />
-          </svg>
-        </div>
-        <span class="text-white font-semibold tracking-wide text-sm">Three.js Editor</span>
-      </div>
-
-      <!-- Status Pill -->
-      <div
-        class="pointer-events-auto flex items-center bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-full p-1 shadow-xl">
-        <div class="flex items-center gap-2 px-4 py-1.5 border-r border-white/10">
-          <div class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
-          <span id="mode-label" class="text-white text-xs font-medium uppercase">Translate</span>
-        </div>
-        <div class="flex items-center gap-2 px-4 py-1.5 border-r border-white/10">
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" class="text-slate-500">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          <span id="model-status" class="text-slate-400 text-xs truncate max-w-[180px]">No model loaded</span>
-        </div>
-        <div class="flex items-center px-4 py-1.5">
-          <span id="fps-counter" class="text-emerald-400 text-xs font-mono font-semibold tracking-wider">-- FPS</span>
-        </div>
-      </div>
-
-      <div class="pointer-events-auto flex items-center gap-3">
-        <!-- Optional external button, keeping original layout -->
-      </div>
+    <div class="ambient-background">
+        <div class="grid-layer"></div>
+        <div class="crosshairs"></div>
+        <div class="spotlight"></div>
+        <div class="spotlight-core"></div>
     </div>
 
-    <!-- Left Toolbar -->
-    <div class="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-20">
-
-      <!-- Transforms -->
-      <div
-        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] flex flex-col gap-1">
-        <div class="group relative">
-          <button id="btn-translate"
-            class="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:bg-blue-500 transition-colors relative z-10 active">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="5 9 2 12 5 15"></polyline>
-              <polyline points="9 5 12 2 15 5"></polyline>
-              <polyline points="19 9 22 12 19 15"></polyline>
-              <polyline points="9 19 12 22 15 19"></polyline>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <line x1="12" y1="2" x2="12" y2="22"></line>
+    <header>
+        <div class="logo-group">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#6B93F3" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+                <path d="M2 17L12 22L22 17" stroke="#6B93F3" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+                <path d="M2 12L12 17L22 12" stroke="#6B93F3" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round"></path>
             </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Translate <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">T</span>
-          </div>
+            Nexus
         </div>
-
-        <div class="group relative">
-          <button id="btn-rotate"
-            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"></path>
-            </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Rotate <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">R</span>
-          </div>
+        <div style="display: flex; gap: 12px">
+            <a href="#" class="nav-btn">View docs</a>
+            <a href="editor.html" class="nav-btn primary">Launch Editor</a>
         </div>
+    </header>
 
-        <div class="group relative">
-          <button id="btn-scale"
-            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="21 3 14 3 14 10"></polyline>
-              <polyline points="3 21 10 21 10 14"></polyline>
-              <line x1="21" y1="3" x2="14" y2="10"></line>
-              <line x1="3" y1="21" x2="10" y2="14"></line>
-            </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Scale <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">S</span>
-          </div>
-        </div>
-      </div>
+    <main>
 
-      <!-- View Options -->
-      <div
-        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-1.5 shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] flex flex-col gap-1 relative before:absolute before:-top-2 before:left-1/2 before:-translate-x-1/2 before:w-4 before:h-px before:bg-white/10">
-        <div class="group relative">
-          <button id="btn-fit"
-            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3">
-              </path>
-            </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Fit View <span class="text-slate-500 font-mono text-[10px] bg-black/30 px-1 rounded">F</span>
-          </div>
-        </div>
+        <section class="hero-header">
+            <div class="overline">Introducing Nexus</div>
+            <h1>Web-native<br>3D authoring.</h1>
+            <p class="subtitle">A professional grade WebGL scene editor. <strong>Import, compose, and animate</strong>
+                directly in the browser with uncompromising performance.</p>
+        </section>
 
-        <div class="group relative">
-          <button id="btn-focus"
-            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path>
-            </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Focus Selected
-          </div>
-        </div>
+        <section class="editor-showcase">
 
-        <div class="group relative">
-          <button id="btn-wireframe"
-            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path
-                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-              </path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Wireframe
-          </div>
-        </div>
+            <div class="panel left">
+                <div class="panel-header">
+                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Hierarchy
+                </div>
+                <div class="tree-list no-scrollbar">
+                    <div class="tree-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                        </svg>
+                        Scene Root
+                    </div>
+                    <div class="tree-indent">
+                        <div class="tree-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e67e22"
+                                stroke-width="2">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            DirectionalLight
+                        </div>
+                        <div class="tree-item selected">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3498db"
+                                stroke-width="2">
+                                <path
+                                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                                </path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                            Hero_Geometry
+                        </div>
+                        <div class="tree-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#95a5a6"
+                                stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            </svg>
+                            GridFloor
+                        </div>
+                    </div>
+                    <div class="tree-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                            </path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        MainCamera
+                    </div>
+                </div>
+            </div>
 
-        <div class="group relative">
-          <button id="btn-bbox"
-            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 4"></rect>
-            </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Bounding Box
-          </div>
-        </div>
+            <div class="panel right">
+                <div class="panel-header">
+                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                        <line x1="1" y1="14" x2="7" y2="14"></line>
+                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                        <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    Properties
+                </div>
+                <div class="inspector-content no-scrollbar">
+                    <div class="prop-section">
+                        <div class="prop-title">Transform</div>
 
-        <div class="group relative">
-          <button id="btn-frustum"
-            class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2L2 22h20L12 2z"></path>
-            </svg>
-          </button>
-          <div
-            class="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-2.5 py-1.5 bg-[#1a1f2e] text-white text-xs font-medium rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl border border-white/5 flex items-center gap-2">
-            Camera Frustum
-          </div>
-        </div>
-      </div>
-    </div>
+                        <div class="prop-row">
+                            <div class="prop-label">Position</div>
+                            <div class="prop-inputs">
+                                <div class="input-group">
+                                    <span style="color:#e74c3c">X</span><input type="text" value="0.000">
+                                </div>
+                                <div class="input-group">
+                                    <span style="color:#2ecc71">Y</span><input type="text" value="1.500">
+                                </div>
+                                <div class="input-group">
+                                    <span style="color:#3498db">Z</span><input type="text" value="-2.000">
+                                </div>
+                            </div>
+                        </div>
 
-    <!-- Right Sidebar -->
-    <div class="absolute right-6 top-24 bottom-6 w-80 flex flex-col gap-4 z-20 pointer-events-none">
+                        <div class="prop-row">
+                            <div class="prop-label">Rotation</div>
+                            <div class="prop-inputs">
+                                <div class="input-group">
+                                    <span style="color:#e74c3c">X</span><input type="text" value="45.00">
+                                </div>
+                                <div class="input-group">
+                                    <span style="color:#2ecc71">Y</span><input type="text" value="0.000">
+                                </div>
+                                <div class="input-group">
+                                    <span style="color:#3498db">Z</span><input type="text" value="90.00">
+                                </div>
+                            </div>
+                        </div>
 
-      <!-- Startup/Import Setup Panel -->
-      <div id="startup-panel"
-        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex-shrink-0 transition-opacity duration-500">
-        <div
-          class="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none">
-        </div>
+                        <div class="prop-row">
+                            <div class="prop-label">Scale</div>
+                            <div class="prop-inputs">
+                                <div class="input-group">
+                                    <span style="color:#e74c3c">X</span><input type="text" value="1.000">
+                                </div>
+                                <div class="input-group">
+                                    <span style="color:#2ecc71">Y</span><input type="text" value="1.000">
+                                </div>
+                                <div class="input-group">
+                                    <span style="color:#3498db">Z</span><input type="text" value="1.000">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="flex items-center gap-2.5 mb-6 relative">
-          <div class="relative flex h-2.5 w-2.5">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-          </div>
-          <span class="text-[11px] font-bold tracking-widest text-emerald-400/90 uppercase">Workspace Active</span>
-        </div>
+                    <div style="height:1px; background:rgba(255,255,255,0.05); margin: 20px 0;"></div>
 
-        <h2 class="text-xl font-medium text-white mb-2 relative">Scene Setup</h2>
-        <p class="text-[13px] text-slate-400 leading-relaxed max-h-[80px] relative">
-          Import your assets to begin composing. Use a <code
-            class="text-slate-300 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">.glb</code>
-          file, or a full <code
-            class="text-slate-300 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">.gltf</code>
-          folder.
-        </p>
+                    <div class="prop-section">
+                        <div class="prop-title">Material</div>
+                        <div class="prop-row">
+                            <div class="prop-label">Type</div>
+                            <div
+                                style="flex:1; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.05); padding:6px 8px; border-radius:4px; font-size:12px; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+                                MeshPhysical
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="prop-row">
+                            <div class="prop-label">Color</div>
+                            <div style="flex:1; display:flex; gap:8px; align-items:center;">
+                                <div
+                                    style="width:24px; height:24px; background:#6B93F3; border-radius:4px; border:1px solid rgba(255,255,255,0.2);">
+                                </div>
+                                <span
+                                    style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);">#6B93F3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <div class="flex gap-3 w-full mt-6 relative z-10">
-          <button id="btn-import-file"
-            class="flex-1 relative flex items-center justify-center gap-2 bg-white text-black hover:bg-slate-200 active:scale-[0.98] transition-all py-2.5 rounded-xl text-sm font-semibold shadow-[0_0_20px_rgba(255,255,255,0.1)] group">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-              class="group-hover:-translate-y-0.5 transition-transform">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-              <polyline points="13 2 13 9 20 9"></polyline>
-            </svg>
-            File
-          </button>
-          <button id="btn-import-folder"
-            class="flex-1 relative flex items-center justify-center gap-2 bg-white/10 text-white hover:bg-white/20 active:scale-[0.98] transition-all py-2.5 rounded-xl text-sm font-semibold border border-white/10 group">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-              class="group-hover:-translate-y-0.5 transition-transform">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
-            Folder
-          </button>
-        </div>
-      </div>
+            <div class="panel center">
+                <div class="panel-header">
+                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Scene_01.gltf
+                </div>
 
+                <div class="viewport-container">
+                    <div class="css-3d-scene">
+                        <div class="scene-group">
+                            <div class="scene-grid"></div>
+                            <div class="geometry">
+                                <div class="geo-plane"></div>
+                                <div class="geo-plane"></div>
+                                <div class="geo-plane"></div>
+                            </div>
 
-      <div class="flex-grow"></div>
+                            <div class="gizmo">
+                                <div class="axis axis-y"></div>
+                                <div class="axis axis-x"></div>
+                                <div class="axis axis-z"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-      <!-- File Operations -->
-      <div
-        class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-4 shadow-xl flex-shrink-0">
-        <div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3 px-1">File Operations</div>
-        <div class="grid grid-cols-3 gap-2">
-          <button id="btn-capture"
-            class="flex flex-col items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              class="group-hover:scale-110 transition-transform">
-              <rect x="3" y="7" width="18" height="13" rx="2"></rect>
-              <circle cx="12" cy="13" r="3"></circle>
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-            <span class="text-[10px] font-medium">Capture</span>
-          </button>
+                <div class="viewport-footer">
+                    <div class="view-controls">
+                        <span class="view-ctrl active">Persp</span>
+                        <span class="view-ctrl">Top</span>
+                        <span class="view-ctrl">Front</span>
+                        <span class="view-ctrl">Right</span>
+                    </div>
+                    <div>FPS: 60 | Tris: 12.4k</div>
+                </div>
+            </div>
 
-          <button id="btn-save"
-            class="flex flex-col items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              class="group-hover:scale-110 transition-transform">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-              <polyline points="17 21 17 13 7 13 7 21"></polyline>
-              <polyline points="7 3 7 8 15 8"></polyline>
-            </svg>
-            <span class="text-[10px] font-medium">Save</span>
-          </button>
+        </section>
 
-          <button id="btn-load"
-            class="flex flex-col items-center justify-center gap-2 p-2.5 rounded-xl bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-              class="group-hover:scale-110 transition-transform text-amber-400">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
-            <span class="text-[10px] font-medium">Load</span>
-          </button>
-        </div>
-      </div>
+        <section class="features-container">
+            <h2 class="features-heading">Professional workflow. Batteries included.</h2>
 
-      <!-- Timeline Operations -->
-      <div class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-4 shadow-[0_8px_32px_-4px_rgba(252,211,77,0.1)] flex-shrink-0 mt-4">
-          <div class="flex items-center justify-between mb-3 px-1">
-              <div class="text-[10px] font-bold tracking-widest text-[#fcd34d] uppercase flex items-center gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                  GSAP Timeline
-              </div>
-              <span id="keyframe-count" class="text-[10px] font-mono font-medium bg-white/10 text-white px-1.5 py-0.5 rounded">0 frames</span>
-          </div>
-          <div class="flex gap-2">
-              <button id="btn-add-keyframe" class="flex-1 relative flex items-center justify-center gap-2 bg-[#fcd34d] text-[#451a03] hover:bg-[#fbbf24] active:scale-[0.98] transition-all py-2 rounded-xl text-xs font-bold shadow-[0_0_15px_rgba(252,211,77,0.3)] group">
-                  + Keyframe
-              </button>
-              <button id="btn-play-timeline" class="w-10 relative flex items-center justify-center bg-emerald-500/15 text-emerald-300 hover:text-white hover:bg-emerald-500/25 active:scale-[0.98] transition-all rounded-xl border border-emerald-400/20 group" title="Play timeline">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-              </button>
-              <button id="btn-clear-timeline" class="w-10 relative flex items-center justify-center bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 active:scale-[0.98] transition-all rounded-xl border border-transparent hover:border-white/10 group">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-              </button>
-          </div>
-          <div id="keyframe-list" class="mt-3 max-h-52 overflow-y-auto space-y-2 pr-1">
-              <div class="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-3 py-3 text-[11px] text-slate-500">
-                  No keyframes recorded yet.
-              </div>
-          </div>
-      </div>
+            <div class="features-network">
+                <div class="network-line"></div>
+                <div class="network-node"></div>
+                <div class="network-node"></div>
+                <div class="network-node"></div>
+                <div class="network-node"></div>
 
-    </div>
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </div>
+                    <span class="feature-label">.GLTF Import</span>
+                </div>
 
-    <!-- Capture Panel Overlay -->
-    <div id="capture-panel"
-      class="hidden pointer-events-auto absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[#0a0c10]/95 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] w-[600px] flex flex-col gap-4">
-      <div class="flex items-center justify-between border-b border-white/10 pb-4">
-        <h2 class="text-lg font-medium text-white flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg"
-            width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" class="text-emerald-400">
-            <polyline points="16 18 22 12 16 6"></polyline>
-            <polyline points="8 6 2 12 8 18"></polyline>
-          </svg> Scene Config Output</h2>
-        <div class="flex gap-2">
-          <button id="btn-copy-json"
-            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-xs font-medium text-slate-300 rounded-lg transition-colors border border-white/5">Copy
-            JSON</button>
-          <button id="btn-copy-code"
-            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-xs font-medium text-slate-300 rounded-lg transition-colors border border-white/5">Copy
-            Code</button>
-          <button id="btn-copy-gsap"
-            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-xs font-medium text-slate-300 rounded-lg transition-colors border border-white/5">Copy
-            GSAP</button>
-          <button id="btn-close-panel"
-            class="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-slate-400 rounded-lg transition-colors border border-white/5">✕</button>
-        </div>
-      </div>
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                            </path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                    </div>
+                    <span class="feature-label">Camera Rigging</span>
+                </div>
 
-      <div id="capture-tabs" class="flex gap-2">
-        <button
-          class="cap-tab active px-4 py-2 text-xs font-medium text-white bg-white/10 rounded-lg transition-colors border border-white/5"
-          data-target="json-output">JSON</button>
-        <button
-          class="cap-tab px-4 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent"
-          data-target="code-output">Three.js Snippet</button>
-        <button
-          class="cap-tab px-4 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent"
-          data-target="gsap-output">GSAP Code</button>
-      </div>
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <span class="feature-label">GSAP Timeline</span>
+                </div>
 
-      <div
-        class="relative bg-[#050505] inset-shadow-sm border border-white/5 rounded-xl p-4 overflow-auto max-h-[400px]">
-        <pre id="json-output"
-          class="cap-content active text-[11px] font-mono text-emerald-400/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
-        <pre id="code-output"
-          class="cap-content text-[11px] font-mono text-blue-400/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
-        <pre id="gsap-output"
-          class="cap-content text-[11px] font-mono text-[#fcd34d]/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
-      </div>
-    </div>
+                <div class="feature-item">
+                    <div class="feature-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </div>
+                    <span class="feature-label">React Three Fiber</span>
+                </div>
 
-  </div>
+            </div>
+        </section>
 
-  <!-- Hidden Dummy Elements specifically required by main.js to not crash -->
-  <div style="display: none;">
-    <input type="file" id="model-file-input" accept=".glb,.gltf,.bin,image/*" multiple />
-    <input type="file" id="model-folder-input" webkitdirectory directory multiple />
-    <input type="file" id="file-input" accept=".json" />
+    </main>
 
-    <div id="import-panel">
-      <button id="btn-import-primary"></button>
-      <button id="btn-close-import-panel"></button>
-      <button id="btn-import"></button>
-    </div>
-  </div>
-
-  <script type="module" src="./js/main.js"></script>
 </body>
 
 </html>
