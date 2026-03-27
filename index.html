@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus - Uncompromising WebGL Control</title>
-    
+    <title>3js Editor - High-Fidelity 3D Scene Authoring</title>
+    <meta name="description"
+        content="3js Editor - The professional 3D authoring environment for WebGL developers. Export production-ready GSAP and Three.js code seamlessly.">
+    <meta name="keywords" content="Three.js, WebGL, GSAP, 3js Editor, 3D Scene Editor, Web Development">
+    <meta property="og:title" content="3js Editor - High-Fidelity 3D Scene Authoring">
+    <meta property="og:description" content="Ultimate WebGL workspace for creating and exporting cinematic 3D scenes.">
+    <meta property="og:type" content="website">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
 
     <style>
         :root {
-            --bg: #E8E4DC;
-            --brand: #C87941;
-            --text-main: #1A1A1A;
-            --text-alt: #E8E4DC;
-            --grid-line: rgba(26, 26, 26, 0.1);
-            --shadow-accent: #9A5C32;
+            --bg: #030407;
+            --brand: #6B93F3;
+            --text-main: #FFFFFF;
+            --text-alt: #030407;
+            --grid-line: rgba(255, 255, 255, 0.05);
+            --shadow-accent: rgba(107, 147, 243, 0.4);
         }
 
         * {
@@ -28,31 +37,33 @@
         body {
             background-color: var(--bg);
             color: var(--text-main);
-            font-family: 'Oswald', Impact, sans-serif;
+            font-family: 'Inter', sans-serif;
             overflow: hidden;
             height: 100vh;
             width: 100vw;
             display: flex;
             flex-direction: column;
             -webkit-font-smoothing: antialiased;
-            
-            background-image: 
+
+            background-image:
                 linear-gradient(var(--grid-line) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
             background-size: 4vw 4vw;
             background-position: center top;
         }
 
-        h1, h2, h3, .nav-logo {
+        h1,
+        h2,
+        h3,
+        .nav-logo {
             font-weight: 700;
-            font-style: italic;
             text-transform: uppercase;
             line-height: 0.85;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.04em;
         }
 
         .mono {
-            font-family: 'Space Mono', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-style: normal;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -62,32 +73,41 @@
             position: fixed;
             font-size: 0.65rem;
             color: var(--text-main);
-            opacity: 0.5;
+            opacity: 0.25;
             writing-mode: vertical-rl;
             transform: rotate(180deg);
             z-index: 100;
         }
-        .code-left { top: 2vw; left: 1vw; }
-        .code-right { bottom: 2vw; right: 1vw; }
+
+        .code-left {
+            top: 2vw;
+            left: 1vw;
+        }
+
+        .code-right {
+            bottom: 2vw;
+            right: 1vw;
+        }
 
         nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 1.5vw 3vw;
-            border-bottom: 2px solid var(--text-main);
-            background: var(--bg);
+            border-bottom: 1px solid var(--grid-line);
+            background: rgba(3, 4, 7, 0.8);
+            backdrop-filter: blur(10px);
             position: relative;
-            z-index: 10;
+            z-index: 100;
         }
 
         .nav-logo {
-            font-size: 3.5vw;
+            font-size: 2.2vw;
             text-decoration: none;
             color: var(--text-main);
             position: relative;
         }
-        
+
         .nav-logo::after {
             content: '®';
             font-size: 0.3em;
@@ -107,7 +127,7 @@
             text-decoration: none;
             font-size: 1vw;
             padding: 0.5em 1em;
-            transition: all 0.1s; 
+            transition: all 0.1s;
         }
 
         .nav-link:hover {
@@ -129,18 +149,22 @@
             text-align: center;
             transition: transform 0.1s;
         }
-        .btn:active { transform: translateY(2px); }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
 
         .btn-solid {
             background: var(--brand);
-            color: var(--text-alt);
+            color: #FFFFFF;
             border-color: var(--brand);
-            box-shadow: -4px 4px 0 var(--text-main);
+            box-shadow: -4px 4px 0 rgba(0, 0, 0, 0.5);
         }
 
         .btn-solid:hover {
-            background: var(--text-main);
-            color: #fff;
+            background: #FFFFFF;
+            color: var(--bg);
+            border-color: #FFFFFF;
             box-shadow: 0 0 0 var(--text-main);
         }
 
@@ -156,37 +180,43 @@
 
         main {
             flex: 1;
-            display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             min-height: 0;
             position: relative;
+            text-align: center;
+            padding-bottom: 8vw;
         }
 
         .hero-content {
-            padding: 4vw 3vw;
+            padding: 6vw 3vw 2vw;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
-            border-right: 2px solid var(--text-main);
-            background: var(--bg);
+            border-right: none;
+            background: transparent;
             z-index: 2;
         }
 
         .hero-h1 {
-            font-size: 7.8vw;
+            font-size: 8.5vw;
+            line-height: 0.85;
             word-spacing: -0.1em;
-            margin-bottom: 0.15em;
+            margin-bottom: 0.2em;
             display: flex;
             flex-direction: column;
+            align-items: center;
             color: var(--text-main);
             overflow: visible;
         }
 
         .tagline {
-            font-size: 1.4vw;
-            max-width: 85%;
-            margin-bottom: 3.5vw;
-            line-height: 1.25;
+            font-size: 1.1vw;
+            max-width: 50%;
+            margin-bottom: 2.5vw;
+            line-height: 1.6;
             color: var(--text-main);
             opacity: 0.9;
         }
@@ -195,15 +225,21 @@
             display: flex;
             gap: 1.5vw;
             align-items: center;
+            justify-content: center;
+            width: 100%;
         }
 
         .hero-visual {
             position: relative;
-            background: var(--bg);
-            overflow: hidden;
+            background: transparent;
+            overflow: visible;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            flex: 1;
+            margin-top: 2vw;
+            pointer-events: none;
         }
 
         .iso-scene {
@@ -211,7 +247,7 @@
             height: 100%;
             position: absolute;
             top: 50%;
-            left: 55%;
+            left: 50%;
             transform: translate(-50%, -50%) rotateX(60deg) rotateZ(-45deg);
             transform-style: preserve-3d;
         }
@@ -224,39 +260,42 @@
             left: 50%;
             transform: translate(-50%, -50%);
             border: 2px solid var(--text-main);
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 1.9vw,
-                var(--text-main) 1.9vw,
-                var(--text-main) 2vw
-            ),
-            repeating-linear-gradient(
-                90deg,
-                transparent,
-                transparent 1.9vw,
-                var(--text-main) 1.9vw,
-                var(--text-main) 2vw
-            );
+            background: repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 1.9vw,
+                    var(--text-main) 1.9vw,
+                    var(--text-main) 2vw),
+                repeating-linear-gradient(90deg,
+                    transparent,
+                    transparent 1.9vw,
+                    var(--text-main) 1.9vw,
+                    var(--text-main) 2vw);
             opacity: 0.15;
             animation: grid-pulse 4s infinite alternate ease-in-out;
         }
 
         @keyframes grid-pulse {
-            from { opacity: 0.15; transform: translate(-50%, -50%) scale(1); }
-            to { opacity: 0.3; transform: translate(-50%, -50%) scale(1.05); }
+            from {
+                opacity: 0.15;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            to {
+                opacity: 0.3;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
         }
 
         .iso-pillar {
             position: absolute;
             background: var(--brand);
-            box-shadow: 
+            box-shadow:
                 -1px 1px 0 var(--shadow-accent),
                 -3px 3px 0 var(--shadow-accent),
                 -5px 5px 0 var(--shadow-accent),
-                -10px 10px 0 var(--text-main);
+                -10px 10px 0 rgba(0, 0, 0, 0.8);
             transform: translateZ(20px);
-            border: 2px solid var(--text-main);
+            border: 1px solid var(--text-main);
             transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -266,10 +305,33 @@
             color: #fff;
         }
 
-        .p1 { width: 5vw; height: 14vw; top: 12vw; left: 8vw; }
-        .p2 { width: 10vw; height: 5vw; top: 22vw; left: 24vw; }
-        .p3 { width: 6vw; height: 8vw; top: 32vw; left: 14vw; }
-        .p4 { width: 8vw; height: 8vw; top: 8px; left: 28vw; }
+        .p1 {
+            width: 5vw;
+            height: 14vw;
+            top: 12vw;
+            left: 8vw;
+        }
+
+        .p2 {
+            width: 10vw;
+            height: 5vw;
+            top: 22vw;
+            left: 24vw;
+        }
+
+        .p3 {
+            width: 6vw;
+            height: 8vw;
+            top: 32vw;
+            left: 14vw;
+        }
+
+        .p4 {
+            width: 8vw;
+            height: 8vw;
+            top: 8px;
+            left: 28vw;
+        }
 
         .iso-label {
             position: absolute;
@@ -284,14 +346,25 @@
         }
 
         .trust-section {
-            border-top: 2px solid var(--text-main);
+            width: 100vw;
+            border-top: 1px solid var(--grid-line);
             background: var(--bg);
-            padding: 1.2vw 3vw;
+            height: 5vw;
             display: flex;
             align-items: center;
             overflow: hidden;
             position: relative;
             z-index: 10;
+        }
+
+        .marquee-container {
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            -webkit-mask-image: linear-gradient(to right, transparent, black 5vw, black 95%, transparent);
+            mask-image: linear-gradient(to right, transparent, black 5vw, black 95%, transparent);
         }
 
         .trust-label {
@@ -309,41 +382,78 @@
         }
 
         .trust-marquee span {
-            font-size: 2.8vw;
+            font-size: 3.2vw;
             font-weight: 700;
             font-style: italic;
             text-transform: uppercase;
-            -webkit-text-stroke: 1px var(--text-main);
+            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.4);
             color: transparent;
-            opacity: 0.35;
+            opacity: 0.8;
             white-space: nowrap;
         }
 
         @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
         }
 
         @media (max-width: 1024px) {
-            body { overflow-y: auto; height: auto; }
-            main { grid-template-columns: 1fr; }
-            .hero-content { border-right: none; border-bottom: 2px solid var(--text-main); padding: 12vw 5vw; }
-            .hero-h1 { font-size: 15vw; }
-            .tagline { font-size: 3vw; max-width: 100%; }
-            .btn { font-size: 4vw; padding: 2.5vw 6vw; }
-            .hero-visual { min-height: 60vh; }
-            .nav-logo { font-size: 6vw; }
-            .nav-link { display: none; }
+            body {
+                overflow-y: auto;
+                height: auto;
+            }
+
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-content {
+                border-right: none;
+                border-bottom: 2px solid var(--text-main);
+                padding: 12vw 5vw;
+            }
+
+            .hero-h1 {
+                font-size: 15vw;
+            }
+
+            .tagline {
+                font-size: 3vw;
+                max-width: 100%;
+            }
+
+            .btn {
+                font-size: 4vw;
+                padding: 2.5vw 6vw;
+            }
+
+            .hero-visual {
+                min-height: 60vh;
+            }
+
+            .nav-logo {
+                font-size: 6vw;
+            }
+
+            .nav-link {
+                display: none;
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <div class="system-code mono code-left">SYS.VER.1.0.4 // NEXUS_SIM // OPERATION: READY</div>
+    <div class="system-code mono code-left">SYS.VER.1.0.4 // 3JS_EDITOR // OPERATION: READY</div>
     <div class="system-code mono code-right">DATA.EXPORT // GSAP.ENGINE // BOILERPLATE_V2</div>
 
     <nav>
-        <a href="index.html" class="nav-logo">NEXUS</a>
+        <a href="index.html" class="nav-logo">3js Editor</a>
         <div class="nav-links">
             <a href="editor.html" class="nav-link mono">Open Editor</a>
             <a href="editor.html" class="btn btn-solid">Launch Simulator</a>
@@ -358,7 +468,8 @@
                 <span>ANIMATION.</span>
             </h1>
             <p class="tagline mono">
-                Uncompromising control over WebGL architecture. Nexus transforms artistic 3D vision into production-ready GSAP code. Zero friction. Pure execution. 
+                Uncompromising control over WebGL architecture. Nexus transforms artistic 3D vision into
+                production-ready GSAP code. Zero friction. Pure execution.
                 Time is structural. Eradicate animation overhead.
             </p>
             <div class="cta-group">
@@ -370,7 +481,7 @@
         <section class="hero-visual">
             <div class="iso-scene">
                 <div class="iso-grid-base"></div>
-                
+
                 <div class="iso-pillar p1">
                     <div class="iso-label" style="top: 0; left: 0;">CAMERA_RIGGING</div>
                 </div>
@@ -389,17 +500,20 @@
 
     <section class="trust-section">
         <div class="trust-label mono">OPTIMIZED FOR:</div>
-        <div class="trust-marquee">
-            <span>THREE.JS</span>
-            <span>GSAP CORE</span>
-            <span>WEBGL 2.0</span>
-            <span>REACT FIBER</span>
-            <span>THREE.JS</span>
-            <span>GSAP CORE</span>
-            <span>WEBGL 2.0</span>
-            <span>REACT FIBER</span>
+        <div class="marquee-container">
+            <div class="trust-marquee">
+                <span>THREE.JS</span>
+                <span>GSAP CORE</span>
+                <span>WEBGL 2.0</span>
+                <span>REACT FIBER</span>
+                <span>THREE.JS</span>
+                <span>GSAP CORE</span>
+                <span>WEBGL 2.0</span>
+                <span>REACT FIBER</span>
+            </div>
         </div>
     </section>
 
 </body>
+
 </html>

@@ -4,12 +4,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexus - 3D Authoring Environment</title>
-  
+  <title>3js Editor - Professional Workspace</title>
+  <meta name="description"
+    content="3js Editor - Professional Workspace. Author, simulate, and export high-performance 3D scenes for the web.">
+  <meta name="robots" content="noindex, nofollow">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
   <script type="importmap">
     {
       "imports": {
@@ -25,19 +30,19 @@
       --bg-void: #030407;
       --bg-panel: #0a0c10;
       --bg-hover: #141820;
-      
+
       --text-primary: #ffffff;
       --text-secondary: #8A91A6;
       --text-muted: #565d79;
       --accent-glow: rgba(107, 147, 243, 0.3);
-      
+
       --border-hairline: rgba(255, 255, 255, 0.05);
       --border-focus: rgba(255, 255, 255, 0.15);
 
       --font-sans: 'Inter', -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
-      
-      --grid-line: rgba(255,255,255,0.02);
+
+      --grid-line: rgba(255, 255, 255, 0.02);
     }
 
     * {
@@ -56,11 +61,11 @@
       display: grid;
       grid-template-columns: 280px 1fr 340px;
       grid-template-rows: 1fr 240px;
-      grid-template-areas: 
+      grid-template-areas:
         "outliner viewport inspector"
         "timeline timeline timeline";
-      
-      background-image: 
+
+      background-image:
         linear-gradient(var(--grid-line) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
       background-size: 40px 40px;
@@ -113,8 +118,14 @@
       overflow-y: auto;
     }
 
-    .panel-content::-webkit-scrollbar { width: 4px; }
-    .panel-content::-webkit-scrollbar-thumb { background: var(--border-focus); border-radius: 4px; }
+    .panel-content::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .panel-content::-webkit-scrollbar-thumb {
+      background: var(--border-focus);
+      border-radius: 4px;
+    }
 
     /* Outliner */
     .outliner {
@@ -163,8 +174,13 @@
       color: var(--text-muted);
     }
 
-    .indent-1 { padding-left: 28px; }
-    .indent-2 { padding-left: 48px; }
+    .indent-1 {
+      padding-left: 28px;
+    }
+
+    .indent-2 {
+      padding-left: 48px;
+    }
 
     /* Viewport */
     .viewport {
@@ -285,8 +301,9 @@
       overflow: hidden;
       transition: all 0.2s;
     }
-    
-    .input-group:hover, .input-group:focus-within {
+
+    .input-group:hover,
+    .input-group:focus-within {
       border-color: var(--border-focus);
       background: rgba(0, 0, 0, 0.5);
     }
@@ -340,6 +357,7 @@
       color: #6B93F3;
       border-color: rgba(107, 147, 243, 0.2);
     }
+
     .action-button.primary:hover {
       background: rgba(107, 147, 243, 0.15);
       border-color: rgba(107, 147, 243, 0.4);
@@ -380,9 +398,16 @@
       transition: all 0.2s;
     }
 
-    .btn-icon:hover { opacity: 1; transform: scale(1.1); }
-    .btn-icon:disabled { opacity: 0.2; cursor: not-allowed; }
-    
+    .btn-icon:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .btn-icon:disabled {
+      opacity: 0.2;
+      cursor: not-allowed;
+    }
+
     .btn-icon svg {
       width: 16px;
       height: 16px;
@@ -392,12 +417,12 @@
       font-family: var(--font-mono);
       font-size: 12px;
       letter-spacing: 0.05em;
-      background: rgba(0,0,0,0.3);
+      background: rgba(0, 0, 0, 0.3);
       padding: 6px 12px;
       border-radius: 8px;
       border: 1px solid var(--border-hairline);
     }
-    
+
     .time-display span:last-child {
       color: var(--text-muted);
     }
@@ -413,10 +438,9 @@
     .ruler {
       height: 24px;
       border-bottom: 1px solid var(--border-hairline);
-      background-image: repeating-linear-gradient(90deg, 
-          transparent, transparent 49px, 
-          rgba(255,255,255,0.05) 49px, rgba(255,255,255,0.05) 50px
-      );
+      background-image: repeating-linear-gradient(90deg,
+          transparent, transparent 49px,
+          rgba(255, 255, 255, 0.05) 49px, rgba(255, 255, 255, 0.05) 50px);
       background-position: 0 100%;
       background-size: 50px 10px;
       background-repeat: repeat-x;
@@ -430,8 +454,14 @@
       padding: 8px 0;
     }
 
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
     #keyframe-list {
       display: flex;
@@ -444,13 +474,13 @@
       top: 0;
       bottom: 0;
       width: 1px;
-      background: #fcd34d; 
+      background: #fcd34d;
       left: 0%;
       z-index: 20;
       pointer-events: none;
       transition: left 0.1s linear;
     }
-    
+
     .playhead::before {
       content: '';
       position: absolute;
@@ -482,11 +512,25 @@
       gap: 24px;
     }
 
-    #capture-panel.active { display: flex; }
-    .hidden { display: none !important; }
+    #capture-panel.active {
+      display: flex;
+    }
 
-    .cap-header { display: flex; justify-content: space-between; align-items: center; }
-    .cap-tabs { display: flex; gap: 8px; }
+    .hidden {
+      display: none !important;
+    }
+
+    .cap-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cap-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
     .cap-tab {
       padding: 8px 16px;
       background: transparent;
@@ -498,7 +542,11 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .cap-tab:hover { background: rgba(255,255,255,0.05); }
+
+    .cap-tab:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
     .cap-tab.active {
       background: rgba(107, 147, 243, 0.15);
       color: #6B93F3;
@@ -514,18 +562,24 @@
       flex: 1;
     }
 
-    pre { 
-      font-family: var(--font-mono); 
-      font-size: 11px; 
-      line-height: 1.6; 
-      color: #accaf0; 
-      tab-size: 2; 
-      margin: 0; 
+    pre {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.6;
+      color: #accaf0;
+      tab-size: 2;
+      margin: 0;
       user-select: text !important;
       -webkit-user-select: text !important;
     }
-    .cap-content { display: none; }
-    .cap-content.active { display: block; }
+
+    .cap-content {
+      display: none;
+    }
+
+    .cap-content.active {
+      display: block;
+    }
 
     /* lil-gui theming */
     .lil-gui {
@@ -560,11 +614,11 @@
       letter-spacing: 0.1em !important;
       font-size: 10px !important;
       padding: 10px 12px !important;
-      background: rgba(255,255,255,0.02) !important;
+      background: rgba(255, 255, 255, 0.02) !important;
     }
 
     .lil-gui .controller {
-      border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
       padding: 4px 0 !important;
     }
   </style>
@@ -584,18 +638,23 @@
         <li class="tree-item indent-1"><span class="tree-arrow">↳</span> Environment</li>
         <li class="tree-item indent-2"><span class="tree-arrow">↳</span> Main Camera</li>
         <li class="tree-item indent-1"><span class="tree-arrow">↳</span> Geometry</li>
-        <li class="tree-item indent-2 active"><span class="tree-arrow">↳</span> <span id="model-status">No model loaded</span></li>
+        <li class="tree-item indent-2 active"><span class="tree-arrow">↳</span> <span id="model-status">No model
+            loaded</span></li>
       </ul>
-      
+
       <div style="margin-top: 40px;">
         <div class="meta-text" style="color: #6B93F3">Project Assets</div>
         <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
           <button class="action-button" id="btn-import-file">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+            </svg>
             Import File
           </button>
           <button class="action-button" id="btn-import-folder">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
             Import Folder
           </button>
         </div>
@@ -608,32 +667,48 @@
     <div id="canvas-container">
       <canvas id="simulator-canvas"></canvas>
     </div>
-    
+
     <div class="viewport-overlay">
       <div class="meta-text">Camera: <span id="mode-label">Persp</span></div>
-      <div class="mono-data" style="margin-top: 4px; color: var(--text-secondary)"><span id="fps-counter">-- FPS</span></div>
+      <div class="mono-data" style="margin-top: 4px; color: var(--text-secondary)"><span id="fps-counter">-- FPS</span>
+      </div>
     </div>
 
     <!-- TRANSFORM TOOLS OVERLAY -->
     <div class="transform-toolbar">
       <button class="btn-tool active" id="btn-translate" title="Translate (T)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20" />
+        </svg>
       </button>
       <button class="btn-tool" id="btn-rotate" title="Rotate (R)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
+        </svg>
       </button>
       <button class="btn-tool" id="btn-scale" title="Scale (S)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3h-7v7M3 21h7v-7M21 3l-7 7M3 21l7-7"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 3h-7v7M3 21h7v-7M21 3l-7 7M3 21l7-7" />
+        </svg>
       </button>
       <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 4px 2px;"></div>
       <button class="btn-tool" id="btn-fit" title="Fit (F)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+        </svg>
       </button>
       <button class="btn-tool" id="btn-focus" title="Focus">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+        </svg>
       </button>
       <button class="btn-tool" id="btn-wireframe" title="Wireframe">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
+        </svg>
       </button>
     </div>
   </main>
@@ -648,27 +723,42 @@
       <div class="prop-section">
         <div class="prop-section-title"><span>System</span><span class="mono-data">READY</span></div>
         <div style="display: flex; gap: 8px;">
-           <button class="action-button primary" id="btn-capture">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2" ry="2"></rect><circle cx="12" cy="13" r="3"></circle><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-             Capture
-           </button>
-           <button class="action-button" id="btn-save">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-           </button>
-           <button class="action-button" id="btn-load">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-           </button>
+          <button class="action-button primary" id="btn-capture">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="7" width="18" height="13" rx="2" ry="2"></rect>
+              <circle cx="12" cy="13" r="3"></circle>
+              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Capture
+          </button>
+          <button class="action-button" id="btn-save">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+          </button>
+          <button class="action-button" id="btn-load">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </button>
         </div>
       </div>
 
       <div class="prop-section">
-        <div class="prop-section-title"><span>Timeline</span><span class="mono-data" id="keyframe-count">0 frames</span></div>
+        <div class="prop-section-title"><span>Timeline</span><span class="mono-data" id="keyframe-count">0 frames</span>
+        </div>
         <button class="action-button primary" id="btn-add-keyframe" style="margin-bottom: 8px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
           Add Keyframe
         </button>
         <button class="action-button" id="btn-clear-timeline">
-           Clear All Sequence
+          Clear All Sequence
         </button>
       </div>
 
@@ -683,26 +773,32 @@
     <div class="timeline-header">
       <div class="meta-text">Animation Sequence</div>
       <div class="playback-controls">
-        <button class="btn-icon" id="btn-reset-timeline" title="Reset"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg></button>
+        <button class="btn-icon" id="btn-reset-timeline" title="Reset"><svg width="16" height="16" viewBox="0 0 24 24"
+            fill="currentColor">
+            <path
+              d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+          </svg></button>
         <button class="btn-icon" id="btn-play-timeline" title="Play">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
         </button>
       </div>
       <div class="time-display">
         <span>00:02:14</span> / <span>00:10:00</span>
       </div>
     </div>
-    
+
     <div class="timeline-track-area">
       <div class="ruler" id="timeline-ruler"></div>
       <div class="playhead" id="playhead"></div>
-      
+
       <div class="tracks no-scrollbar">
         <div id="keyframe-list">
           <!-- Populated by JS -->
-           <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 11px;">
-             No keyframes recorded in this session.
-           </div>
+          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 11px;">
+            No keyframes recorded in this session.
+          </div>
         </div>
       </div>
     </div>
@@ -712,7 +808,8 @@
   <div id="capture-panel">
     <div class="cap-header">
       <div class="meta-text" style="color: #6B93F3">Scene Export</div>
-      <button id="btn-close-panel" style="background:none; border:none; color:#fff; cursor:pointer; font-size:18px;">✕</button>
+      <button id="btn-close-panel"
+        style="background:none; border:none; color:#fff; cursor:pointer; font-size:18px;">✕</button>
     </div>
     <div class="cap-tabs" id="capture-tabs">
       <button class="cap-tab active" data-target="json-output">JSON CONFIG</button>
@@ -731,10 +828,10 @@
     </div>
   </div>
 
-    <!-- Hidden Dummy Elements specifically required by main.js to not crash -->
-    <div style="display: none;">
-      <div id="startup-panel"></div>
-      <input type="file" id="model-file-input" accept=".glb,.gltf,.bin,image/*" multiple />
+  <!-- Hidden Dummy Elements specifically required by main.js to not crash -->
+  <div style="display: none;">
+    <div id="startup-panel"></div>
+    <input type="file" id="model-file-input" accept=".glb,.gltf,.bin,image/*" multiple />
     <input type="file" id="model-folder-input" webkitdirectory directory multiple />
     <input type="file" id="file-input" accept=".json" />
 
@@ -744,7 +841,7 @@
       <button id="btn-close-import-panel"></button>
       <button id="btn-import"></button>
     </div>
-    
+
     <!-- Visual helpers toggles (we don't have separate buttons for these in the new UI, but lets keep them to not break JS) -->
     <button id="btn-bbox"></button>
     <button id="btn-frustum"></button>
@@ -752,4 +849,5 @@
 
   <script type="module" src="./js/main.js"></script>
 </body>
+
 </html>
