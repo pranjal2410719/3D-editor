@@ -36,14 +36,24 @@ export class CaptureManager {
   /** Generate config, populate the panel, and show it. */
   open(gsapCode = '') {
     const cfg = this._buildConfig();
-    this._jsonEl.textContent = JSON.stringify(cfg, null, 2);
-    this._codeEl.textContent = this._buildCodeSnippet(cfg);
-    document.getElementById('gsap-output').textContent = gsapCode;
-    this._panel.classList.remove('hidden');
+    if (this._jsonEl) this._jsonEl.textContent = JSON.stringify(cfg, null, 2);
+    if (this._codeEl) this._codeEl.textContent = this._buildCodeSnippet(cfg);
+    
+    const gsapOutput = document.getElementById('gsap-output');
+    if (gsapOutput) gsapOutput.textContent = gsapCode || "// No keyframes recorded in this session.";
+    
+    // Use 'active' class instead of just removing 'hidden'
+    if (this._panel) {
+      this._panel.classList.add('active');
+      this._panel.classList.remove('hidden');
+    }
   }
 
   close() {
-    this._panel.classList.add('hidden');
+    if (this._panel) {
+      this._panel.classList.remove('active');
+      this._panel.classList.add('hidden');
+    }
   }
 
   /** Download config as .json file */
@@ -156,19 +166,36 @@ model.scale.set(${m.scale.x}, ${m.scale.y}, ${m.scale.z});
   _euler(e) { return { x: +e.x.toFixed(6), y: +e.y.toFixed(6), z: +e.z.toFixed(6) }; }
 
   _bindCopyButtons() {
+    const copy = async (text, btnId) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        this._flash(btnId, 'Copied!');
+      } catch (err) {
+        // Fallback for non-https/localhost or older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          this._flash(btnId, 'Copied!');
+        } catch (e) {
+          console.error('[Capture] Copy failed:', e);
+        }
+        document.body.removeChild(textArea);
+      }
+    };
+
     document.getElementById('btn-copy-json').addEventListener('click', () => {
-      navigator.clipboard.writeText(this._jsonEl.textContent);
-      this._flash('btn-copy-json', 'Copied!');
+      copy(this._jsonEl.textContent, 'btn-copy-json');
     });
     document.getElementById('btn-copy-code').addEventListener('click', () => {
-      navigator.clipboard.writeText(this._codeEl.textContent);
-      this._flash('btn-copy-code', 'Copied!');
+      copy(this._codeEl.textContent, 'btn-copy-code');
     });
     const gsapCopyBtn = document.getElementById('btn-copy-gsap');
     if (gsapCopyBtn) {
       gsapCopyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(document.getElementById('gsap-output').textContent);
-        this._flash('btn-copy-gsap', 'Copied!');
+        copy(document.getElementById('gsap-output').textContent, 'btn-copy-gsap');
       });
     }
   }

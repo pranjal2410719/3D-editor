@@ -34,17 +34,23 @@ export function buildGUI(gui, camera, orbitControls, state) {
 
   // ── Camera folder ──────────────────────────────────────────────
   const camFolder = gui.addFolder('📷 Camera');
-  camFolder.add(camProxy, 'posX').name('pos X').listen().disable();
-  camFolder.add(camProxy, 'posY').name('pos Y').listen().disable();
-  camFolder.add(camProxy, 'posZ').name('pos Z').listen().disable();
-  camFolder.add(camProxy, 'targetX').name('target X').listen().disable();
-  camFolder.add(camProxy, 'targetY').name('target Y').listen().disable();
-  camFolder.add(camProxy, 'targetZ').name('target Z').listen().disable();
-  camFolder.add(camProxy, 'fov', 10, 120, 1).name('FOV').onChange((v) => {
+  camFolder.add(camProxy, 'posX', -100, 100, 0.01).name('pos X').listen().onChange(applyCameraTransform);
+  camFolder.add(camProxy, 'posY', -100, 100, 0.01).name('pos Y').listen().onChange(applyCameraTransform);
+  camFolder.add(camProxy, 'posZ', -100, 100, 0.01).name('pos Z').listen().onChange(applyCameraTransform);
+  camFolder.add(camProxy, 'targetX', -20, 20, 0.01).name('target X').listen().onChange(applyCameraTransform);
+  camFolder.add(camProxy, 'targetY', -20, 20, 0.01).name('target Y').listen().onChange(applyCameraTransform);
+  camFolder.add(camProxy, 'targetZ', -20, 20, 0.01).name('target Z').listen().onChange(applyCameraTransform);
+  camFolder.add(camProxy, 'fov', 1, 175, 1).name('FOV').onChange((v) => {
     camera.fov = v;
     camera.updateProjectionMatrix();
   });
   camFolder.open();
+
+  function applyCameraTransform() {
+    camera.position.set(camProxy.posX, camProxy.posY, camProxy.posZ);
+    orbitControls.target.set(camProxy.targetX, camProxy.targetY, camProxy.targetZ);
+    orbitControls.update();
+  }
 
   // ── Model folder ───────────────────────────────────────────────
   const modelFolder = gui.addFolder('📦 Model');

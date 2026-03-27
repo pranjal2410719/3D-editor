@@ -25,6 +25,8 @@ export class ToolbarController {
     this.keyframeCountEl = document.getElementById('keyframe-count');
     this.keyframeListEl  = document.getElementById('keyframe-list');
     this.playTimelineBtn = document.getElementById('btn-play-timeline');
+    this.resetTimelineBtn = document.getElementById('btn-reset-timeline');
+    this.rulerEl         = document.getElementById('timeline-ruler');
 
     this._init();
   }
@@ -67,6 +69,21 @@ export class ToolbarController {
 
     this.playTimelineBtn?.addEventListener('click', () => {
       this.timeline.togglePlayback(() => this._updateTimelineUI());
+      this._updateTimelineUI();
+    });
+
+    this.resetTimelineBtn?.addEventListener('click', () => {
+      this.timeline.stopPlayback(true);
+      this.timeline.applyKeyframe(0);
+      this._updateTimelineUI();
+    });
+
+    this.rulerEl?.addEventListener('click', (e) => {
+      if (this.timeline.keyframes.length < 2) return;
+      const rect = this.rulerEl.getBoundingClientRect();
+      const pct = (e.clientX - rect.left) / rect.width;
+      const index = Math.round(pct * (this.timeline.keyframes.length - 1));
+      this.timeline.applyKeyframe(index);
       this._updateTimelineUI();
     });
 
@@ -183,46 +200,52 @@ export class ToolbarController {
     }
 
     if (!this.keyframeListEl) return;
+    const count = keyframes.length;
 
-    if (keyframes.length === 0) {
+    if (count === 0) {
       this.keyframeListEl.innerHTML = `
-        <div class="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-3 py-3 text-[11px] text-slate-500">
-          No keyframes recorded yet.
+        <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 11px;">
+          No keyframes recorded in this session. Add at least two to begin sequence.
         </div>
       `;
       return;
     }
 
-    this.keyframeListEl.innerHTML = keyframes.map((keyframe, index) => {
-      const activeClass = index === this.timeline.activeIndex
-        ? 'border-[#fcd34d]/60 bg-[#fcd34d]/10'
-        : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]';
+    const segments = Math.max(count - 1, 1);
+    
+    // Modern Multitrack Layout
+    let html = `
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 0;">
+        ${this._renderTrackRow('Camera', keyframes, (i) => i / segments)}
+        ${keyframes[0]?.model ? this._renderTrackRow('Model Pos', keyframes, (i) => i / segments) : ''}
+        ${keyframes[0]?.model ? this._renderTrackRow('Model Rot', keyframes, (i) => i / segments) : ''}
+      </div>
+    `;
+    
+    this.keyframeListEl.innerHTML = html;
+  }
 
+  _renderTrackRow(label, keyframes, getProgress) {
+    const markers = keyframes.map((kf, i) => {
+      const active = i === this.timeline.activeIndex;
+      const left = getProgress(i) * 100;
       return `
-        <div class="flex items-start gap-2 rounded-xl border ${activeClass} p-2 transition-colors">
-          <button
-            type="button"
-            data-keyframe-index="${index}"
-            class="flex-1 text-left"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-[11px] font-semibold text-white">Keyframe ${index + 1}</span>
-              <span class="text-[10px] font-mono text-slate-400">FOV ${keyframe.camera.fov}</span>
-            </div>
-            <div class="mt-1 text-[10px] text-slate-400">${this._describeKeyframe(keyframe)}</div>
-          </button>
-          <button
-            type="button"
-            data-remove-keyframe="${index}"
-            class="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-400 transition-colors hover:border-red-400/30 hover:bg-red-500/10 hover:text-red-300"
-            aria-label="Remove keyframe ${index + 1}"
-            title="Remove keyframe ${index + 1}"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-          </button>
-        </div>
+        <div 
+          class="keyframe ${active ? 'active' : ''}" 
+          style="position: absolute; left: ${left}%; top: 50%; width: 10px; height: 10px; background: ${active ? '#fcd34d' : '#fff'}; transform: translate(-50%, -50%) rotate(45deg); cursor: pointer; border: 1px solid rgba(0,0,0,0.5); z-index: 50;"
+          data-keyframe-index="${i}"
+          title="Jump to frame ${i + 1}"
+        ></div>
       `;
     }).join('');
+
+    return `
+      <div class="track-row" style="position: relative; height: 28px; display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.02);">
+        <span class="track-label" style="position: absolute; left: 32px; font-size: 10px; color: var(--text-muted); z-index: 10; pointer-events: none; opacity: 0.6;">${label}</span>
+        <div class="track-line" style="position: absolute; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.05);"></div>
+        ${markers}
+      </div>
+    `;
   }
 
   _describeKeyframe(keyframe) {

@@ -139,6 +139,16 @@ export class TimelineManager {
     return true;
   }
 
+  getPlaybackProgress() {
+    if (!this.isPlaying || this.keyframes.length < 2) return 0;
+    // Simplified estimate: activeIndex is the 'from' index.
+    const segmentCount = this.keyframes.length - 1;
+    const baseProgress = (this.activeIndex || 0) / segmentCount;
+    // We don't track the sub-progress here easily without storage, 
+    // but we can estimate or just return activeIndex for now.
+    return baseProgress;
+  }
+
   stopPlayback(resetActive = false) {
     if (this._playbackRaf !== null) {
       cancelAnimationFrame(this._playbackRaf);

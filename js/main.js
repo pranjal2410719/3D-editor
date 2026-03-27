@@ -92,6 +92,10 @@ async function handleImportedFiles(fileList) {
   if (imported) {
     startupPanel.classList.add('hidden');
     closeImportPanel();
+    
+    // Update Hierarchy Label
+    const status = document.getElementById('model-status');
+    if (status) status.textContent = state.model?.name || 'Model loaded';
   }
 }
 
@@ -112,7 +116,11 @@ importFolderBtn.addEventListener('click', () => modelFolderInput.click());
 closeImportPanelBtn.addEventListener('click', closeImportPanel);
 
 // ── GUI (lil-gui) ────────────────────────────────────────────────
-const gui = new GUI({ title: '⚙ Scene Inspector' });
+const gui = new GUI({ 
+  container: document.getElementById('contextual-props'),
+  title: '⚙ Scene Params',
+  touchStyles: false 
+});
 const guiState = buildGUI(gui, camera, orbitControls, state);
 
 // ── Capture manager ──────────────────────────────────────────────
@@ -157,9 +165,21 @@ function animate() {
   frames++;
   const now = performance.now();
   if (now - lastTime >= 500) {
-    fpsEl.textContent = `${Math.round(frames / ((now - lastTime) / 1000))} FPS`;
+    if (fpsEl) fpsEl.textContent = `${Math.round(frames / ((now - lastTime) / 1000))} FPS`;
     frames   = 0;
     lastTime = now;
+  }
+
+  // Sync Timeline Playhead visual
+  const playhead = document.getElementById('playhead');
+  if (playhead && timeline) {
+    const kfs = timeline.getKeyframes();
+    if (kfs.length > 1) {
+      const progress = (timeline.activeIndex || 0) / (kfs.length - 1);
+      playhead.style.left = `${progress * 100}%`;
+    } else {
+      playhead.style.left = '0%';
+    }
   }
 }
 animate();
