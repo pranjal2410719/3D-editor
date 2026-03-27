@@ -23,6 +23,7 @@ import { CaptureManager }   from './modules/capture.js';
 import { ToolbarController }from './modules/toolbar.js';
 import { FrustumHelper }    from './modules/frustumHelper.js';
 import { fitCameraToModel, focusOnModel } from './modules/frameUtils.js';
+import { TimelineManager }  from './modules/timeline.js';
 
 // ── Core objects (shared state) ──────────────────────────────────
 const canvas   = document.getElementById('simulator-canvas');
@@ -117,6 +118,9 @@ const guiState = buildGUI(gui, camera, orbitControls, state);
 // ── Capture manager ──────────────────────────────────────────────
 const capture = new CaptureManager(camera, orbitControls, state);
 
+// ── Timeline manager ──────────────────────────────────────────────
+const timeline = new TimelineManager(camera, orbitControls, state);
+
 // ── Toolbar ──────────────────────────────────────────────────────
 const toolbar = new ToolbarController({
   transformControls,
@@ -125,6 +129,7 @@ const toolbar = new ToolbarController({
   state,
   scene,
   capture,
+  timeline,
   frustumHelperModule,
   fitCameraToModel,
   focusOnModel,

@@ -1,0 +1,318 @@
+/**
+ * modules/timeline.js
+ * ─────────────────────────────────────────────────────────────────
+ * Handles keyframe recording and formatting states into GSAP code.
+ * ─────────────────────────────────────────────────────────────────
+ */
+import * as THREE from 'three';
+
+export class TimelineManager {
+  constructor(camera, orbitControls, state) {
+    this.camera        = camera;
+    this.orbitControls = orbitControls;
+    this.state         = state;
+    this.keyframes     = [];
+    this.activeIndex   = null;
+    this.isPlaying     = false;
+    this._playbackRaf  = null;
+    this._segmentMs    = 1200;
+  }
+
+  addKeyframe() {
+    const cam = this.camera;
+    const tgt = this.orbitControls.target;
+    const mdl = this.state.model;
+
+    const kf = {
+      time: this.keyframes.length,
+      camera: {
+        position: this._v3(cam.position),
+        target:   this._v3(tgt),
+        fov:      +cam.fov.toFixed(2),
+      },
+      model: mdl ? {
+        position: this._v3(mdl.position),
+        rotation: this._euler(mdl.rotation),
+        scale:    this._v3(mdl.scale),
+      } : null,
+    };
+
+    this.keyframes.push(kf);
+    this.activeIndex = this.keyframes.length - 1;
+    return this.keyframes.length;
+  }
+
+  clear() {
+    this.stopPlayback();
+    this.keyframes = [];
+    this.activeIndex = null;
+  }
+
+  getKeyframes() {
+    return this.keyframes;
+  }
+
+  removeKeyframe(index) {
+    if (index < 0 || index >= this.keyframes.length) return false;
+    this.stopPlayback();
+    this.keyframes.splice(index, 1);
+    this.keyframes.forEach((kf, idx) => {
+      kf.time = idx;
+    });
+
+    if (this.keyframes.length === 0) {
+      this.activeIndex = null;
+    } else if (this.activeIndex === index) {
+      this.activeIndex = Math.min(index, this.keyframes.length - 1);
+    } else if (this.activeIndex > index) {
+      this.activeIndex -= 1;
+    }
+
+    return true;
+  }
+
+  applyKeyframe(index) {
+    const keyframe = this.keyframes[index];
+    if (!keyframe) return false;
+    this._applySnapshot(keyframe);
+    this.activeIndex = index;
+    return true;
+  }
+
+  togglePlayback(onUpdate) {
+    if (this.isPlaying) {
+      this.stopPlayback();
+      onUpdate?.();
+      return false;
+    }
+
+    this.play(onUpdate);
+    return true;
+  }
+
+  play(onUpdate) {
+    if (this.keyframes.length < 2 || this.isPlaying) return false;
+
+    this.stopPlayback();
+    this.isPlaying = true;
+
+    let segmentIndex = 0;
+    let segmentStart = null;
+
+    this.applyKeyframe(0);
+    onUpdate?.();
+
+    const step = (timestamp) => {
+      if (!this.isPlaying) return;
+
+      const from = this.keyframes[segmentIndex];
+      const to = this.keyframes[segmentIndex + 1];
+      if (!from || !to) {
+        this.stopPlayback();
+        onUpdate?.();
+        return;
+      }
+
+      if (segmentStart === null) segmentStart = timestamp;
+      const progress = Math.min((timestamp - segmentStart) / this._segmentMs, 1);
+
+      this._applyInterpolatedState(from, to, progress);
+
+      if (progress >= 1) {
+        segmentIndex += 1;
+        this.activeIndex = segmentIndex;
+        onUpdate?.();
+
+        if (segmentIndex >= this.keyframes.length - 1) {
+          this.stopPlayback(false);
+          onUpdate?.();
+          return;
+        }
+
+        segmentStart = timestamp;
+      }
+
+      this._playbackRaf = requestAnimationFrame(step);
+    };
+
+    this._playbackRaf = requestAnimationFrame(step);
+    return true;
+  }
+
+  stopPlayback(resetActive = false) {
+    if (this._playbackRaf !== null) {
+      cancelAnimationFrame(this._playbackRaf);
+      this._playbackRaf = null;
+    }
+
+    this.isPlaying = false;
+    if (resetActive && this.keyframes.length === 0) {
+      this.activeIndex = null;
+    }
+  }
+
+  _applySnapshot(keyframe) {
+    if (!keyframe) return;
+
+    this.camera.position.set(
+      keyframe.camera.position.x,
+      keyframe.camera.position.y,
+      keyframe.camera.position.z
+    );
+    this.orbitControls.target.set(
+      keyframe.camera.target.x,
+      keyframe.camera.target.y,
+      keyframe.camera.target.z
+    );
+    this.camera.fov = keyframe.camera.fov;
+    this.camera.updateProjectionMatrix();
+    this.orbitControls.update();
+
+    if (keyframe.model && this.state.model) {
+      this.state.model.position.set(
+        keyframe.model.position.x,
+        keyframe.model.position.y,
+        keyframe.model.position.z
+      );
+      this.state.model.rotation.set(
+        keyframe.model.rotation.x,
+        keyframe.model.rotation.y,
+        keyframe.model.rotation.z
+      );
+      this.state.model.scale.set(
+        keyframe.model.scale.x,
+        keyframe.model.scale.y,
+        keyframe.model.scale.z
+      );
+    }
+
+    if (this.state.bboxHelper && this.state.model) {
+      this.state.bboxHelper.box.setFromObject(this.state.model);
+    }
+  }
+
+  generateGSAPCode() {
+    if (this.keyframes.length === 0) return "// No keyframes recorded.";
+
+    const first = this.keyframes[0];
+    let code = `// ── GSAP Timeline Generated by Three.js Editor ──\n`;
+    code += `// Total Keyframes: ${this.keyframes.length}\n\n`;
+    code += `// Establish the initial recorded state before playing transitions.\n`;
+    code += `camera.position.set(${first.camera.position.x}, ${first.camera.position.y}, ${first.camera.position.z});\n`;
+    code += `controls.target.set(${first.camera.target.x}, ${first.camera.target.y}, ${first.camera.target.z});\n`;
+    code += `controls.update();\n`;
+    code += `camera.fov = ${first.camera.fov};\n`;
+    code += `camera.updateProjectionMatrix();\n`;
+    if (first.model) {
+      code += `model.position.set(${first.model.position.x}, ${first.model.position.y}, ${first.model.position.z});\n`;
+      code += `model.rotation.set(${first.model.rotation.x}, ${first.model.rotation.y}, ${first.model.rotation.z});\n`;
+      code += `model.scale.set(${first.model.scale.x}, ${first.model.scale.y}, ${first.model.scale.z});\n`;
+    } else {
+      code += `// No model was present in the first keyframe.\n`;
+    }
+    code += `\n`;
+    code += `const tl = gsap.timeline({ defaults: { ease: "power2.inOut", duration: 2 } });\n\n`;
+
+    if (this.keyframes.length === 1) {
+      code += `// Only 1 keyframe recorded. Need at least 2 to animate.\n`;
+    } else {
+      for (let i = 1; i < this.keyframes.length; i++) {
+        const prev = this.keyframes[i - 1];
+        const curr = this.keyframes[i];
+
+        code += `// -- Transition to Keyframe ${i + 1} --\n`;
+
+        // Camera Position
+        if (this._diffVector(prev.camera.position, curr.camera.position)) {
+          code += `tl.to(camera.position, { x: ${curr.camera.position.x}, y: ${curr.camera.position.y}, z: ${curr.camera.position.z} }, ">");\n`;
+        }
+        
+        // Orbit Target
+        if (this._diffVector(prev.camera.target, curr.camera.target)) {
+          code += `tl.to(controls.target, { x: ${curr.camera.target.x}, y: ${curr.camera.target.y}, z: ${curr.camera.target.z}, onUpdate: () => controls.update() }, "<");\n`;
+        }
+
+        // Camera FOV
+        if (prev.camera.fov !== curr.camera.fov) {
+          code += `tl.to(camera, { fov: ${curr.camera.fov}, onUpdate: () => camera.updateProjectionMatrix() }, "<");\n`;
+        }
+
+        // Model
+        if (curr.model && prev.model) {
+          if (this._diffVector(prev.model.position, curr.model.position)) {
+            code += `tl.to(model.position, { x: ${curr.model.position.x}, y: ${curr.model.position.y}, z: ${curr.model.position.z} }, "<");\n`;
+          }
+          if (this._diffVector(prev.model.rotation, curr.model.rotation)) {
+            code += `tl.to(model.rotation, {\n`;
+            code += `  x: ${curr.model.rotation.x}, // ${+(curr.model.rotation.x * 180 / Math.PI).toFixed(2)}°\n`;
+            code += `  y: ${curr.model.rotation.y}, // ${+(curr.model.rotation.y * 180 / Math.PI).toFixed(2)}°\n`;
+            code += `  z: ${curr.model.rotation.z}  // ${+(curr.model.rotation.z * 180 / Math.PI).toFixed(2)}°\n`;
+            code += `}, "<");\n`;
+          }
+          if (this._diffVector(prev.model.scale, curr.model.scale)) {
+            code += `tl.to(model.scale, { x: ${curr.model.scale.x}, y: ${curr.model.scale.y}, z: ${curr.model.scale.z} }, "<");\n`;
+          }
+        } else if (curr.model || prev.model) {
+          code += `// Model presence changed at keyframe ${i + 1}; generated tweens assume a persistent \`model\` reference.\n`;
+          if (curr.model) {
+            code += `model.position.set(${curr.model.position.x}, ${curr.model.position.y}, ${curr.model.position.z});\n`;
+            code += `model.rotation.set(${curr.model.rotation.x}, ${curr.model.rotation.y}, ${curr.model.rotation.z});\n`;
+            code += `model.scale.set(${curr.model.scale.x}, ${curr.model.scale.y}, ${curr.model.scale.z});\n`;
+          }
+        }
+        code += `\n`;
+      }
+    }
+    return code;
+  }
+
+  _v3(v)     { return { x: +v.x.toFixed(4), y: +v.y.toFixed(4), z: +v.z.toFixed(4) }; }
+  _euler(e)  { return { x: +e.x.toFixed(6), y: +e.y.toFixed(6), z: +e.z.toFixed(6) }; }
+  _lerp(a, b, t) { return +(a + (b - a) * t).toFixed(6); }
+  _diffVector(a, b) {
+    if (!a || !b) return true;
+    return Math.abs(a.x - b.x) > 0.0001 || Math.abs(a.y - b.y) > 0.0001 || Math.abs(a.z - b.z) > 0.0001;
+  }
+
+  _applyInterpolatedState(from, to, progress) {
+    this.camera.position.set(
+      this._lerp(from.camera.position.x, to.camera.position.x, progress),
+      this._lerp(from.camera.position.y, to.camera.position.y, progress),
+      this._lerp(from.camera.position.z, to.camera.position.z, progress)
+    );
+    this.orbitControls.target.set(
+      this._lerp(from.camera.target.x, to.camera.target.x, progress),
+      this._lerp(from.camera.target.y, to.camera.target.y, progress),
+      this._lerp(from.camera.target.z, to.camera.target.z, progress)
+    );
+    this.camera.fov = this._lerp(from.camera.fov, to.camera.fov, progress);
+    this.camera.updateProjectionMatrix();
+    this.orbitControls.update();
+
+    if (this.state.model && from.model && to.model) {
+      this.state.model.position.set(
+        this._lerp(from.model.position.x, to.model.position.x, progress),
+        this._lerp(from.model.position.y, to.model.position.y, progress),
+        this._lerp(from.model.position.z, to.model.position.z, progress)
+      );
+      this.state.model.rotation.set(
+        this._lerp(from.model.rotation.x, to.model.rotation.x, progress),
+        this._lerp(from.model.rotation.y, to.model.rotation.y, progress),
+        this._lerp(from.model.rotation.z, to.model.rotation.z, progress)
+      );
+      this.state.model.scale.set(
+        this._lerp(from.model.scale.x, to.model.scale.x, progress),
+        this._lerp(from.model.scale.y, to.model.scale.y, progress),
+        this._lerp(from.model.scale.z, to.model.scale.z, progress)
+      );
+    } else if (progress >= 1 && to.model) {
+      this.state.model?.position.set(to.model.position.x, to.model.position.y, to.model.position.z);
+      this.state.model?.rotation.set(to.model.rotation.x, to.model.rotation.y, to.model.rotation.z);
+      this.state.model?.scale.set(to.model.scale.x, to.model.scale.y, to.model.scale.z);
+    }
+
+    if (this.state.bboxHelper && this.state.model) {
+      this.state.bboxHelper.box.setFromObject(this.state.model);
+    }
+  }
+}

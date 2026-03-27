@@ -16,13 +16,13 @@ export class CaptureManager {
    * @param {object}                  state  - shared mutable state
    */
   constructor(camera, orbitControls, state) {
-    this.camera        = camera;
+    this.camera = camera;
     this.orbitControls = orbitControls;
-    this.state         = state;
+    this.state = state;
 
-    this._panel     = document.getElementById('capture-panel');
-    this._jsonEl    = document.getElementById('json-output');
-    this._codeEl    = document.getElementById('code-output');
+    this._panel = document.getElementById('capture-panel');
+    this._jsonEl = document.getElementById('json-output');
+    this._codeEl = document.getElementById('code-output');
     this._fileInput = document.getElementById('file-input');
 
     this._bindCopyButtons();
@@ -34,10 +34,11 @@ export class CaptureManager {
   // ── Public API ──────────────────────────────────────────────────
 
   /** Generate config, populate the panel, and show it. */
-  open() {
+  open(gsapCode = '') {
     const cfg = this._buildConfig();
     this._jsonEl.textContent = JSON.stringify(cfg, null, 2);
     this._codeEl.textContent = this._buildCodeSnippet(cfg);
+    document.getElementById('gsap-output').textContent = gsapCode;
     this._panel.classList.remove('hidden');
   }
 
@@ -47,11 +48,11 @@ export class CaptureManager {
 
   /** Download config as .json file */
   save() {
-    const cfg  = this._buildConfig();
+    const cfg = this._buildConfig();
     const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
     a.download = `scene-config-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
@@ -98,10 +99,10 @@ export class CaptureManager {
       camera: {
         position: this._v3(cam.position),
         rotation: this._euler(cam.rotation),
-        target:   this._v3(tgt),
-        fov:      +cam.fov.toFixed(2),
-        near:     cam.near,
-        far:      cam.far,
+        target: this._v3(tgt),
+        fov: +cam.fov.toFixed(2),
+        near: cam.near,
+        far: cam.far,
       },
       model: mdl ? {
         position: this._v3(mdl.position),
@@ -151,8 +152,8 @@ model.scale.set(${m.scale.x}, ${m.scale.y}, ${m.scale.z});
     return snippet;
   }
 
-  _v3(v)     { return { x: +v.x.toFixed(4), y: +v.y.toFixed(4), z: +v.z.toFixed(4) }; }
-  _euler(e)  { return { x: +e.x.toFixed(6), y: +e.y.toFixed(6), z: +e.z.toFixed(6) }; }
+  _v3(v) { return { x: +v.x.toFixed(4), y: +v.y.toFixed(4), z: +v.z.toFixed(4) }; }
+  _euler(e) { return { x: +e.x.toFixed(6), y: +e.y.toFixed(6), z: +e.z.toFixed(6) }; }
 
   _bindCopyButtons() {
     document.getElementById('btn-copy-json').addEventListener('click', () => {
@@ -163,6 +164,13 @@ model.scale.set(${m.scale.x}, ${m.scale.y}, ${m.scale.z});
       navigator.clipboard.writeText(this._codeEl.textContent);
       this._flash('btn-copy-code', 'Copied!');
     });
+    const gsapCopyBtn = document.getElementById('btn-copy-gsap');
+    if (gsapCopyBtn) {
+      gsapCopyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(document.getElementById('gsap-output').textContent);
+        this._flash('btn-copy-gsap', 'Copied!');
+      });
+    }
   }
 
   _bindTabs() {

@@ -402,6 +402,33 @@
         </div>
       </div>
 
+      <!-- Timeline Operations -->
+      <div class="pointer-events-auto bg-[#0a0c10]/80 backdrop-blur-xl border border-white/5 rounded-2xl p-4 shadow-[0_8px_32px_-4px_rgba(252,211,77,0.1)] flex-shrink-0 mt-4">
+          <div class="flex items-center justify-between mb-3 px-1">
+              <div class="text-[10px] font-bold tracking-widest text-[#fcd34d] uppercase flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  GSAP Timeline
+              </div>
+              <span id="keyframe-count" class="text-[10px] font-mono font-medium bg-white/10 text-white px-1.5 py-0.5 rounded">0 frames</span>
+          </div>
+          <div class="flex gap-2">
+              <button id="btn-add-keyframe" class="flex-1 relative flex items-center justify-center gap-2 bg-[#fcd34d] text-[#451a03] hover:bg-[#fbbf24] active:scale-[0.98] transition-all py-2 rounded-xl text-xs font-bold shadow-[0_0_15px_rgba(252,211,77,0.3)] group">
+                  + Keyframe
+              </button>
+              <button id="btn-play-timeline" class="w-10 relative flex items-center justify-center bg-emerald-500/15 text-emerald-300 hover:text-white hover:bg-emerald-500/25 active:scale-[0.98] transition-all rounded-xl border border-emerald-400/20 group" title="Play timeline">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+              </button>
+              <button id="btn-clear-timeline" class="w-10 relative flex items-center justify-center bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 active:scale-[0.98] transition-all rounded-xl border border-transparent hover:border-white/10 group">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+          </div>
+          <div id="keyframe-list" class="mt-3 max-h-52 overflow-y-auto space-y-2 pr-1">
+              <div class="rounded-xl border border-dashed border-white/10 bg-white/[0.03] px-3 py-3 text-[11px] text-slate-500">
+                  No keyframes recorded yet.
+              </div>
+          </div>
+      </div>
+
     </div>
 
     <!-- Capture Panel Overlay -->
@@ -421,6 +448,9 @@
           <button id="btn-copy-code"
             class="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-xs font-medium text-slate-300 rounded-lg transition-colors border border-white/5">Copy
             Code</button>
+          <button id="btn-copy-gsap"
+            class="px-3 py-1.5 bg-white/5 hover:bg-white/10 hover:text-white text-xs font-medium text-slate-300 rounded-lg transition-colors border border-white/5">Copy
+            GSAP</button>
           <button id="btn-close-panel"
             class="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-slate-400 rounded-lg transition-colors border border-white/5">✕</button>
         </div>
@@ -433,6 +463,9 @@
         <button
           class="cap-tab px-4 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent"
           data-target="code-output">Three.js Snippet</button>
+        <button
+          class="cap-tab px-4 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors border border-transparent"
+          data-target="gsap-output">GSAP Code</button>
       </div>
 
       <div
@@ -441,6 +474,8 @@
           class="cap-content active text-[11px] font-mono text-emerald-400/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
         <pre id="code-output"
           class="cap-content text-[11px] font-mono text-blue-400/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
+        <pre id="gsap-output"
+          class="cap-content text-[11px] font-mono text-[#fcd34d]/90 leading-relaxed m-0 whitespace-pre-wrap"></pre>
       </div>
     </div>
 
