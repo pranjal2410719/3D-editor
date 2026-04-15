@@ -1,0 +1,13 @@
+{
+  "name": "3d-editor",
+  "version": "1.0.0",
+  "description": "WebGL Scene Editor",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

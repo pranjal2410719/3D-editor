@@ -402,85 +402,6 @@
             }
         }
 
-        /* ── Like Counter Button ── */
-        .like-btn {
-            display: inline-flex;
-            align-items: center;
-            height: 2.2rem;
-            border-radius: 999px;
-            overflow: hidden;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.13);
-            backdrop-filter: blur(12px);
-            cursor: pointer;
-            user-select: none;
-            transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
-        }
-        .like-btn:hover:not(.liked) {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.28);
-            box-shadow: 0 0 16px rgba(255,255,255,0.07);
-        }
-        .like-btn.liked {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.4);
-            box-shadow: 0 0 22px rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.12);
-            cursor: default;
-        }
-        .like-btn:active:not(.liked) { transform: scale(0.95); }
-
-        .like-count {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            min-width: 2.3rem;
-            padding: 0 0.5rem;
-            background: rgba(255,255,255,0.09);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: #fff;
-            transition: all 0.3s ease;
-        }
-        .like-btn.liked .like-count { background: rgba(255,255,255,0.16); }
-
-        .like-right {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0 0.7rem 0 0.5rem;
-        }
-        .like-right svg {
-            width: 13px; height: 13px;
-            transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
-            stroke: rgba(255,255,255,0.75);
-        }
-        .like-btn.liked .like-right svg {
-            transform: scale(1.3);
-            stroke: #fff;
-        }
-        .like-right span {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.77rem;
-            font-weight: 600;
-            color: rgba(255,255,255,0.72);
-            white-space: nowrap;
-            transition: color 0.2s;
-        }
-        .like-btn.liked .like-right span { color: #fff; }
-
-        @keyframes like-pop {
-            0%   { transform: scale(1); }
-            40%  { transform: scale(1.55); }
-            70%  { transform: scale(0.9); }
-            100% { transform: scale(1.3); }
-        }
-        .like-btn.pop .like-right svg {
-            animation: like-pop 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
-        }
-
         @media (max-width: 1024px) {
 
             body {
@@ -529,23 +450,12 @@
 
 <body>
 
-    <div class="system-code mono code-left">SYS.VER.1.0.4 // 3JS_EDITOR // OPERATION: READY</div>
+    <div class="system-code mono code-left">SYS.VER.1.0.4 // NEXUS_EDITOR // OPERATION: READY</div>
     <div class="system-code mono code-right">DATA.EXPORT // GSAP.ENGINE // BOILERPLATE_V2</div>
 
     <nav>
-        <a href="index.html" class="nav-logo">3js Editor</a>
+        <a href="index.html" class="nav-logo">Nexus</a>
         <div class="nav-links">
-
-            <!-- Like Counter -->
-            <button id="likeBtn" class="like-btn" aria-label="Like this project">
-                <span class="like-count" id="likeCount">0</span>
-                <div class="like-right">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-                    </svg>
-                    <span>Like</span>
-                </div>
-            </button>
 
             <a href="editor.html" class="nav-link mono">Open Editor</a>
             <a href="editor.html" class="btn btn-solid">Launch Simulator</a>
@@ -609,42 +519,7 @@
     </section>
 
 
-<script>
-  (function () {
-    var COUNT_KEY  = 'threejs_liked_count';
-    var VOTED_KEY  = 'threejs_has_liked';
 
-    var btn        = document.getElementById('likeBtn');
-    var countEl    = document.getElementById('likeCount');
-
-    // Read stored count; default 0
-    var count = parseInt(localStorage.getItem(COUNT_KEY) || '0', 10);
-    var hasLiked  = localStorage.getItem(VOTED_KEY) === '1';
-
-    // Render initial state
-    countEl.textContent = count;
-    if (hasLiked) btn.classList.add('liked');
-
-    btn.addEventListener('click', function () {
-      if (hasLiked) return; // already liked — do nothing
-
-      count += 1;
-      hasLiked = true;
-
-      localStorage.setItem(COUNT_KEY, count);
-      localStorage.setItem(VOTED_KEY, '1');
-
-      countEl.textContent = count;
-      btn.classList.add('liked');
-
-      // Trigger pop animation
-      btn.classList.add('pop');
-      btn.addEventListener('animationend', function () {
-        btn.classList.remove('pop');
-      }, { once: true });
-    });
-  })();
-</script>
 
 </body>
 
